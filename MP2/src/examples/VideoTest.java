@@ -1,3 +1,4 @@
+package examples;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 
