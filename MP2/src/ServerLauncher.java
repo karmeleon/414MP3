@@ -1,3 +1,9 @@
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import javax.swing.*;
 
 public class ServerLauncher extends JFrame {
@@ -15,16 +21,35 @@ public class ServerLauncher extends JFrame {
 		setResizable(false);
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
-		setVisible(true);
+		
+		JPanel mainContainer = new JPanel();
+		mainContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
+		getContentPane().add(mainContainer);
+		
+		JPanel ctrlPanel = new JPanel();
+		ctrlPanel.setPreferredSize(new Dimension(500, 30));
+		mainContainer.add(ctrlPanel);
+		
+		JButton startButton = new JButton("Start");
+		startButton.setMargin(new Insets(0,0,0,0));
+		startButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				pushLog("> CTRL: SERVER STARTED");
+			}
+		});
+		ctrlPanel.add(startButton);
 		
 		textArea = new JTextArea();
 		scrollPane = new JScrollPane(textArea);
-		getContentPane().add(scrollPane);
+		scrollPane.setPreferredSize(new Dimension(500, 770));
+		mainContainer.add(scrollPane);
 		
-		push("Starting Server...");
+		
+		pushLog("Starting Server...");
+		setVisible(true);
 	}
 	
-	private void push(String line) {
+	private void pushLog(String line) {
 		textArea.setText(textArea.getText() + line + "\n");
 	}
 	
