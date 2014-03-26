@@ -10,6 +10,7 @@ public class ClientLauncher extends JFrame{
 	private static final long serialVersionUID = 5429778737562008920L;
 	
 	String currpath;
+	int bandwidth = 0;
 	String logtext = "";
 	JTextArea textArea;
 	JPanel videoPanel;
@@ -131,16 +132,21 @@ public class ClientLauncher extends JFrame{
 	 * @return state of player, true = playing, false = remain paused
 	 */
 	private boolean playback() {
-		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem());
+		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
 		return playing;
 	}
 	
 	private void scanResource() throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader("resource.txt"));
 		String currline = "";
-		while ((currline = br.readLine()) != null) {
-			rsrc += currline + "\n";
+		try {
+			bandwidth = Integer.parseInt(br.readLine());
+		} catch (NumberFormatException e) {
+			pushLog("> RSRC: BAD VALUE");
+		} catch (IOException e) {
+			pushLog("> RSRC: BAD VALUE");
 		}
+		br.close();
 	}
 	
 	private void makeCtrlButton(String name) {
