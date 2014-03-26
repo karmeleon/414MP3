@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Insets;
@@ -41,9 +42,13 @@ public class ServerLauncher extends JFrame {
 		
 		textArea = new JTextArea();
 		scrollPane = new JScrollPane(textArea);
-		scrollPane.setPreferredSize(new Dimension(500, 770));
+		scrollPane.setPreferredSize(new Dimension(500, 740));
 		mainContainer.add(scrollPane);
 		
+		JPanel dataPanel = new JPanel();
+		dataPanel.setPreferredSize(new Dimension(500, 30));
+		dataPanel.setBackground(new Color(0,0,0));
+		mainContainer.add(dataPanel);
 		
 		pushLog("Starting Server...");
 		setVisible(true);

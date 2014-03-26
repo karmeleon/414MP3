@@ -1,6 +1,7 @@
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
+import java.io.*;
+import java.nio.file.*;
 import java.util.*;
 import javax.swing.*;
 
@@ -12,11 +13,12 @@ public class ClientLauncher extends JFrame{
 	String logtext = "";
 	JTextArea textArea;
 	JPanel videoPanel;
+	String rsrc;
 	
 	Map<String, JButton> buttons;
 	boolean playing = false;
 	
-	public ClientLauncher() {
+	public ClientLauncher() throws IOException {
 		super("Client");
 		currpath = System.getProperty("user.dir");
 		setSize(1200,800);
@@ -37,9 +39,26 @@ public class ClientLauncher extends JFrame{
 		videoPanel.setBackground(new Color(0,0,0));
 		mainContainer.add(videoPanel);
 		
-		JPanel fillPanel = new JPanel();
-		fillPanel.setPreferredSize(new Dimension(200, 30));
-		mainContainer.add(fillPanel);
+		JPanel resPanel = new JPanel();
+		resPanel.setPreferredSize(new Dimension(200, 30));
+		resPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0,0));
+		mainContainer.add(resPanel);
+		
+		scanResource();
+		
+		makeCtrlButton("Refresh");
+		resPanel.add(buttons.get("Refresh"));
+		buttons.get("Refresh").addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				pushLog("> RSRC: UPDATED");
+				try {
+					scanResource();
+				} 
+				catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
 		
 		JPanel ctrlPanel = new JPanel();
 		ctrlPanel.setPreferredSize(new Dimension(800, 30));
@@ -62,6 +81,12 @@ public class ClientLauncher extends JFrame{
 		
 		makeCtrlButton("Stop");
 		ctrlPanel.add(buttons.get("Stop"));
+		buttons.get("Stop").addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				clearLog();
+				pushLog("> CTRL: STOP");
+			}
+		});
 		
 		JPanel optPanel = new JPanel();
 		optPanel.setPreferredSize(new Dimension(200,30));
@@ -84,11 +109,14 @@ public class ClientLauncher extends JFrame{
 		
 		JPanel dataPanel = new JPanel();
 		dataPanel.setPreferredSize(new Dimension(1200, 30));
-		dataPanel.setBackground(new Color(51,51,51));
+		dataPanel.setBackground(new Color(0,0,0));
 		mainContainer.add(dataPanel);
 		
 		pushLog("Starting Client...");
 		setVisible(true);
+		
+		Path path = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
+		pushLog("> SYS: PATH " + currpath);
 	}
 	
 	/**
@@ -104,17 +132,29 @@ public class ClientLauncher extends JFrame{
 		return playing;
 	}
 	
+	private void scanResource() throws IOException {
+		BufferedReader br = new BufferedReader(new FileReader("resource.txt"));
+		String currline = "";
+		while ((currline = br.readLine()) != null) {
+			rsrc += currline + "\n";
+		}
+	}
+	
 	private void makeCtrlButton(String name) {
 		JButton b = new JButton(name);
 		b.setMargin(new Insets(0,0,0,0));
 		buttons.put(name, b);
 	}
 	
+	private void clearLog() {
+		textArea.setText("");
+	}
+	
 	private void pushLog(String line) {
 		textArea.setText(textArea.getText() + line + "\n");
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		ClientLauncher s = new ClientLauncher();
 	}
 }
