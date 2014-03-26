@@ -14,6 +14,8 @@ public class ClientLauncher extends JFrame{
 	JTextArea textArea;
 	JPanel videoPanel;
 	String rsrc;
+	JComboBox<String> resCombo;
+	JComboBox<String> actCombo;
 	
 	Map<String, JButton> buttons;
 	boolean playing = false;
@@ -93,12 +95,12 @@ public class ClientLauncher extends JFrame{
 		mainContainer.add(optPanel);
 		
 		String[] resSettings = {"480p", "240p"};
-		JComboBox resCombo = new JComboBox(resSettings);
+		resCombo = new JComboBox(resSettings);
 		resCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(resCombo);
 		
 		String[] actSettings = {"Active", "Passive"};
-		JComboBox actCombo = new JComboBox(actSettings);
+		actCombo = new JComboBox(actSettings);
 		actCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(actCombo);
 		
@@ -129,6 +131,7 @@ public class ClientLauncher extends JFrame{
 	 * @return state of player, true = playing, false = remain paused
 	 */
 	private boolean playback() {
+		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem());
 		return playing;
 	}
 	
