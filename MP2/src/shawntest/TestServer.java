@@ -1,22 +1,14 @@
 package shawntest;
 
 import java.io.File;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-
 import org.gstreamer.Bin;
-import org.gstreamer.Buffer;
 import org.gstreamer.Element;
 import org.gstreamer.ElementFactory;
 import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
-import org.gstreamer.Pipeline;
 import org.gstreamer.State;
-import org.gstreamer.elements.AppSink;
 import org.gstreamer.elements.PlayBin2;
 
 public class TestServer {
@@ -49,7 +41,7 @@ public class TestServer {
 		final PlayBin2 playbin = new PlayBin2("VideoPlayer");
         playbin.setInputFile(new File("videos/beauty.mp4"));
         
-        Bin bin = new Bin();
+        Bin vidBin = new Bin("vidbin");
         
         Element encoder = ElementFactory.make("jpegenc", "encoder");
 		Element payloader = ElementFactory.make("rtpjpegpay", "payloader");
@@ -57,11 +49,27 @@ public class TestServer {
 		sink.set("host", "127.0.0.1");
 		sink.set("port", "" + port);
 		sink.set("sync", "true");
-		bin.addMany(encoder, payloader, sink);
+		vidBin.addMany(encoder, payloader, sink);
 		Element.linkMany(encoder, payloader, sink);
-		bin.addPad(new GhostPad("sink", encoder.getStaticPad("sink")));
+		vidBin.addPad(new GhostPad("sink", encoder.getStaticPad("sink")));
         
-        playbin.setVideoSink(bin);
+        playbin.setVideoSink(vidBin);
+        
+        Bin audBin = new Bin("audbin");
+        
+        // assuming raw audio unless told otherwise
+        Element audConv = ElementFactory.make("audioconvert", "audioconv");
+        Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
+        Element audSink = ElementFactory.make("udpsink", "aududpsink");
+        audSink.set("host", "127.0.0.1");
+        audSink.set("port", "" + (port + 1));
+        audSink.set("sync", "true");
+        audBin.addMany(audConv, audPayload, audSink);
+        Element.linkMany(audConv, audPayload, audSink);
+        audBin.addPad(new GhostPad("sink", audConv.getStaticPad("sink")));
+        
+        playbin.setAudioSink(audBin);
+        
         playbin.setState(State.PLAYING);
         Gst.main();
         playbin.setState(State.NULL);

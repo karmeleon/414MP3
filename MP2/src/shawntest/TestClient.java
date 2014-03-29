@@ -78,6 +78,16 @@ public class TestClient {
 		final Element color = ElementFactory.make("ffmpegcolorspace", "color");
 		//final Element sink = ElementFactory.make("autovideosink", "sink");
 		
+		// audio caps string is application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704
+		Element udpAudSrc = ElementFactory.make("udpsrc", "src2");
+		udpAudSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+		udpAudSrc.set("uri", "udp://127.0.0.1:45002");
+		Element audDepay = ElementFactory.make("rtpL16depay", "auddepay");
+		Element audSink = ElementFactory.make("autoaudiosink", "audsink");
+		
+		pipe.addMany(udpAudSrc, audDepay, audSink);
+		Element.linkMany(udpAudSrc, audDepay, audSink);
+		
 		SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
