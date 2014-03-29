@@ -1,17 +1,23 @@
 package shawntest;
 
-import java.awt.Dimension;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.io.File;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
-import org.gstreamer.Caps;
+import org.gstreamer.Bin;
+import org.gstreamer.Buffer;
 import org.gstreamer.Element;
 import org.gstreamer.ElementFactory;
+import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
 import org.gstreamer.Pipeline;
 import org.gstreamer.State;
-import org.gstreamer.swing.VideoComponent;
+import org.gstreamer.elements.AppSink;
+import org.gstreamer.elements.PlayBin2;
 
 public class TestServer {
 
@@ -19,8 +25,7 @@ public class TestServer {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		System.out.println("Starting testserver on port 45000...");
+		System.out.println("Starting testserver on port 45001...");
 		try {
 			//ServerSocket srvr = new ServerSocket(45000);
 			//srvr.setReuseAddress(true);
@@ -28,7 +33,6 @@ public class TestServer {
 	        //System.out.println("Server has connected!");
 	        //PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
 	        startStreaming();
-	        Thread.sleep(50000);
 	        //out.print(data);
 	        //out.close();
 	        //skt.close();
@@ -37,50 +41,31 @@ public class TestServer {
 			e.printStackTrace();
 		}
 	}
-/*
- * 
- * Pipeline pipe = new Pipeline("pipeline");
-		Element videoSrc = ElementFactory.make("v4l2src", "source");
-		Element videoFilter = ElementFactory.make("capsfilter", "filter");
-		videoFilter.setCaps(Caps.fromString("video/x-raw-yuv,height=" + height
-				+ ",width=" + width + ",framerate=" + framerate + "/1"));
-
-		VideoComponent vc = new VideoComponent();
-		Element videoSink = vc.getElement();
-		vc.setPreferredSize(new Dimension(height, width));
-
-		pipe.addMany(videoSrc, videoFilter, videoSink);
-		Element.linkMany(videoSrc, videoFilter, videoSink);
-
-		return new PreparedPipeline(pipe, vc);
-		SERVER:
-		$ gst-launch-0.10 -v filesrc location="beauty.mp4" 
-		! decodebin2 
-		! queue 
-		! jpegenc 
-		! rtpjpegpay 
-		! udpsink host=127.0.0.1 port=5000 sync=true
- */
 	
-	
-	private static void startStreaming() {
+	private static void startStreaming() throws UnknownHostException, SocketException {
+		final int port = 45001;
 		// create the pipeline here
 		Gst.init();
-		Pipeline pipe = new Pipeline("pipeline");
-		Element fileSrc = ElementFactory.make("filesrc", "source");
-		fileSrc.set("location", "videos/beauty.mp4");
-		Element decoder = ElementFactory.make("decodebin2", "decoder");
-		Element queue = ElementFactory.make("queue", "queue");
-		Element encoder = ElementFactory.make("jpegenc", "encoder");
+		final PlayBin2 playbin = new PlayBin2("VideoPlayer");
+        playbin.setInputFile(new File("videos/beauty.mp4"));
+        
+        Bin bin = new Bin();
+        
+        Element encoder = ElementFactory.make("jpegenc", "encoder");
 		Element payloader = ElementFactory.make("rtpjpegpay", "payloader");
-		Element sink = ElementFactory.make("udpsink", "sink");
+		Element sink = ElementFactory.make("udpsink", "netsink");
 		sink.set("host", "127.0.0.1");
-		sink.set("port", "45001");
+		sink.set("port", "" + port);
 		sink.set("sync", "true");
-		pipe.addMany(fileSrc, decoder, queue, encoder, payloader, sink);
-		Element.linkMany(fileSrc, decoder, queue, encoder, payloader, sink);
-		
-		pipe.setState(State.PLAYING);
+		bin.addMany(encoder, payloader, sink);
+		Element.linkMany(encoder, payloader, sink);
+		bin.addPad(new GhostPad("sink", encoder.getStaticPad("sink")));
+        
+        playbin.setVideoSink(bin);
+        playbin.setState(State.PLAYING);
+        Gst.main();
+        playbin.setState(State.NULL);
+
 	}
 
 }

@@ -65,36 +65,7 @@ public class TestClient {
 			e.printStackTrace();
 		}
 	}
-	/*
-	 * Pipeline pipe = new Pipeline("pipeline");
-		Element videoSrc = ElementFactory.make("v4l2src", "source");
-		Element videoFilter = ElementFactory.make("capsfilter", "filter");
-		videoFilter.setCaps(Caps.fromString("video/x-raw-yuv,height=" + height
-				+ ",width=" + width + ",framerate=" + framerate + "/1"));
 
-		VideoComponent vc = new VideoComponent();
-		Element videoSink = vc.getElement();
-		vc.setPreferredSize(new Dimension(height, width));
-
-		pipe.addMany(videoSrc, videoFilter, videoSink);
-		Element.linkMany(videoSrc, videoFilter, videoSink);
-
-		return new PreparedPipeline(pipe, vc);
-	 * CLIENT:
-$ gst-launch-0.10 -v udpsrc uri="udp://127.0.0.1:5000" 
-! "application/x-rtp, 
-	media=(string)video, 
-	clock-rate=(int)90000, 
-	encoding-name=(string)JPEG, 
-	payload=(int)96, 
-	ssrc=(uint)2156703816, c
-	lock-base=(uint)1678649553, 
-	seqnum-base=(uint)31324" 
-! rtpjpegdepay 
-! jpegdec 
-! ffmpegcolorspace 
-! autovideosink
-	 */
 	private static void startStreaming() {
 		Gst.init();
 		final Pipeline pipe = new Pipeline("pipeline");
