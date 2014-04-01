@@ -43,12 +43,31 @@ public class TestServer {
 	        out.println(response.toString());
 	        System.out.println("File list sent, awaiting response.");
 	        
-	        //while (!in.ready()) {}
 	        response = new JSONObject(in.readLine());
 	        String toStream = response.getString("request");
 	        System.out.println("Client requested " + toStream);
 	        
-	        startStreaming(toStream);
+	        PlayBin2 pb = startStreaming(toStream);
+	        
+	        // listen for commands
+	        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
+	        	String nextCommand = in.readLine();
+	        	System.out.println("Received '" + nextCommand + "'.");
+	        	response = new JSONObject(nextCommand);
+	        	String command = response.getString("command");
+	        	switch(command) {
+	        	case "play":
+	        		pb.setState(State.PLAYING);
+	        		break;
+	        	case "pause":
+	        		pb.setState(State.PAUSED);
+	        		break;
+	        	case "stop":
+	        		pb.setState(State.NULL);
+	        		break;
+	        	}
+	        }
+	        
 	        in.close();
 	        out.close();
 	        skt.close();
@@ -58,7 +77,7 @@ public class TestServer {
 		}
 	}
 	
-	private static void startStreaming(String toStream) throws UnknownHostException, SocketException {
+	private static PlayBin2 startStreaming(String toStream) throws UnknownHostException, SocketException, InterruptedException {
 		final int port = 45001;
 		// create the pipeline here
 		Gst.init();
@@ -95,9 +114,9 @@ public class TestServer {
         playbin.setAudioSink(audBin);
         
         playbin.setState(State.PLAYING);
-        Gst.main();
-        playbin.setState(State.NULL);
-
+        //Gst.main();
+        //playbin.setState(State.NULL);
+        return playbin;
 	}
 
 }

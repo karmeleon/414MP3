@@ -37,7 +37,6 @@ public class TestClient {
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
 	
-	        //while (!in.ready()) {}
 	        JSONObject response = new JSONObject(in.readLine());
 	        System.out.println("Successfully connected to server at 127.0.0.1:45000. Available files:");
 	        JSONArray files = response.getJSONArray("files");
@@ -48,14 +47,24 @@ public class TestClient {
 	        response = new JSONObject();
 	        response.put("request", files.getString(s.nextInt()));
 	        out.println(response.toString());
-	
 
 	        startStreaming();
+	        
+	        //send commands
+	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
+	        String line;
+	        while(true) {
+	        	line = s.nextLine();
+	        	response = new JSONObject();
+	        	response.put("command", line);
+	        	out.println(response.toString());
+	        	if(line.equals("stop"))
+	        		break;
+	        }
+	        
 	        in.close();
 	        out.close();
 	        skt.close();
-			//dumpUDP();
-			//Thread.sleep(50000);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
