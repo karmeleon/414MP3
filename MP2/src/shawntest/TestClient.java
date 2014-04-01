@@ -4,10 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -19,6 +21,8 @@ import org.gstreamer.Gst;
 import org.gstreamer.Pipeline;
 import org.gstreamer.State;
 import org.gstreamer.swing.VideoComponent;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class TestClient {
 
@@ -28,39 +32,30 @@ public class TestClient {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try {
-			//Socket skt = new Socket("localhost", 45000);
-			//skt.setReuseAddress(true);
-	        //BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        //System.out.print("Received string: '");
+			Socket skt = new Socket("localhost", 45000);
+			skt.setReuseAddress(true);
+	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
 	
 	        //while (!in.ready()) {}
-	        //System.out.println(in.readLine()); // Read one line and output it
+	        JSONObject response = new JSONObject(in.readLine());
+	        System.out.println("Successfully connected to server at 127.0.0.1:45000. Available files:");
+	        JSONArray files = response.getJSONArray("files");
+	        for(int i = 0; i < files.length(); i++)
+	        	System.out.println(i + ": " + files.getString(i));
+	        System.out.println("Which file would you like to play?");
+	        Scanner s = new Scanner(System.in);
+	        response = new JSONObject();
+	        response.put("request", files.getString(s.nextInt()));
+	        out.println(response.toString());
 	
-	        //System.out.print("'\n");
-	        //in.close();
-			startStreaming();
+
+	        startStreaming();
+	        in.close();
+	        out.close();
+	        skt.close();
 			//dumpUDP();
-			Thread.sleep(50000);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-	private static void dumpUDP() {
-		try {
-		//BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
-		DatagramSocket clientSocket = new DatagramSocket();
-		InetAddress IPAddress = InetAddress.getByName("127.0.0.1");
-		//byte[] sendData = new byte[1024];
-		byte[] receiveData = new byte[1024];
-		//String sentence = inFromUser.readLine();
-		//sendData = sentence.getBytes();
-		//DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
-		//clientSocket.send(sendPacket);
-		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length, IPAddress, 45001);
-		clientSocket.receive(receivePacket);
-		String modifiedSentence = new String(receivePacket.getData());
-		System.out.println("FROM SERVER:" + modifiedSentence);
-		clientSocket.close();
+			//Thread.sleep(50000);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}

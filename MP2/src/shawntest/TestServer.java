@@ -1,6 +1,11 @@
 package shawntest;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import org.gstreamer.Bin;
@@ -10,6 +15,8 @@ import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
 import org.gstreamer.State;
 import org.gstreamer.elements.PlayBin2;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class TestServer {
 
@@ -17,29 +24,46 @@ public class TestServer {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		System.out.println("Starting testserver on port 45001...");
+		System.out.println("Starting testserver on port 45000...");
 		try {
-			//ServerSocket srvr = new ServerSocket(45000);
-			//srvr.setReuseAddress(true);
-	        //Socket skt = srvr.accept();
-	        //System.out.println("Server has connected!");
-	        //PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-	        startStreaming();
-	        //out.print(data);
-	        //out.close();
-	        //skt.close();
-	        //srvr.close();
+			ServerSocket srvr = new ServerSocket(45000);
+			srvr.setReuseAddress(true);
+	        Socket skt = srvr.accept();
+	        System.out.println("Client has connected from " + skt.getRemoteSocketAddress().toString());
+	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+	        // using JSON because it's easy
+	        JSONObject response = new JSONObject();
+	        
+	        File folder = new File(System.getProperty("user.dir") + "/videos/");
+	        for (final File fileEntry : folder.listFiles()) {
+	            if (fileEntry.isFile())
+	                response.append("files", fileEntry.getName());
+	        }
+	        out.println(response.toString());
+	        System.out.println("File list sent, awaiting response.");
+	        
+	        //while (!in.ready()) {}
+	        response = new JSONObject(in.readLine());
+	        String toStream = response.getString("request");
+	        System.out.println("Client requested " + toStream);
+	        
+	        startStreaming(toStream);
+	        in.close();
+	        out.close();
+	        skt.close();
+	        srvr.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	private static void startStreaming() throws UnknownHostException, SocketException {
+	private static void startStreaming(String toStream) throws UnknownHostException, SocketException {
 		final int port = 45001;
 		// create the pipeline here
 		Gst.init();
 		final PlayBin2 playbin = new PlayBin2("VideoPlayer");
-        playbin.setInputFile(new File("videos/beauty.mp4"));
+        playbin.setInputFile(new File("videos/" + toStream));
         
         Bin vidBin = new Bin("vidbin");
         
