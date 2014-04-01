@@ -4,10 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -19,6 +21,8 @@ import org.gstreamer.Gst;
 import org.gstreamer.Pipeline;
 import org.gstreamer.State;
 import org.gstreamer.swing.VideoComponent;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class TestClient {
 
@@ -28,39 +32,39 @@ public class TestClient {
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try {
-			//Socket skt = new Socket("localhost", 45000);
-			//skt.setReuseAddress(true);
-	        //BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        //System.out.print("Received string: '");
+			Socket skt = new Socket("localhost", 45000);
+			skt.setReuseAddress(true);
+	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
 	
-	        //while (!in.ready()) {}
-	        //System.out.println(in.readLine()); // Read one line and output it
-	
-	        //System.out.print("'\n");
-	        //in.close();
-			startStreaming();
-			//dumpUDP();
-			Thread.sleep(50000);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-	private static void dumpUDP() {
-		try {
-		//BufferedReader inFromUser = new BufferedReader(new InputStreamReader(System.in));
-		DatagramSocket clientSocket = new DatagramSocket();
-		InetAddress IPAddress = InetAddress.getByName("127.0.0.1");
-		//byte[] sendData = new byte[1024];
-		byte[] receiveData = new byte[1024];
-		//String sentence = inFromUser.readLine();
-		//sendData = sentence.getBytes();
-		//DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 9876);
-		//clientSocket.send(sendPacket);
-		DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length, IPAddress, 45001);
-		clientSocket.receive(receivePacket);
-		String modifiedSentence = new String(receivePacket.getData());
-		System.out.println("FROM SERVER:" + modifiedSentence);
-		clientSocket.close();
+	        JSONObject response = new JSONObject(in.readLine());
+	        System.out.println("Successfully connected to server at 127.0.0.1:45000. Available files:");
+	        JSONArray files = response.getJSONArray("files");
+	        for(int i = 0; i < files.length(); i++)
+	        	System.out.println(i + ": " + files.getString(i));
+	        System.out.println("Which file would you like to play?");
+	        Scanner s = new Scanner(System.in);
+	        response = new JSONObject();
+	        response.put("request", files.getString(s.nextInt()));
+	        out.println(response.toString());
+
+	        startStreaming();
+	        
+	        //send commands
+	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
+	        String line;
+	        while(true) {
+	        	line = s.nextLine();
+	        	response = new JSONObject();
+	        	response.put("command", line);
+	        	out.println(response.toString());
+	        	if(line.equals("stop"))
+	        		break;
+	        }
+	        
+	        in.close();
+	        out.close();
+	        skt.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -77,6 +81,16 @@ public class TestClient {
 		final Element decode = ElementFactory.make("jpegdec", "decode");
 		final Element color = ElementFactory.make("ffmpegcolorspace", "color");
 		//final Element sink = ElementFactory.make("autovideosink", "sink");
+		
+		// audio caps string is application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704
+		Element udpAudSrc = ElementFactory.make("udpsrc", "src2");
+		udpAudSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+		udpAudSrc.set("uri", "udp://127.0.0.1:45002");
+		Element audDepay = ElementFactory.make("rtpL16depay", "auddepay");
+		Element audSink = ElementFactory.make("autoaudiosink", "audsink");
+		
+		pipe.addMany(udpAudSrc, audDepay, audSink);
+		Element.linkMany(udpAudSrc, audDepay, audSink);
 		
 		SwingUtilities.invokeLater(new Runnable() {
 
