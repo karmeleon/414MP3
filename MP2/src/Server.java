@@ -1,5 +1,3 @@
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -23,62 +21,58 @@ public class Server {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
-		ServerLauncher serverGUI = new ServerLauncher();
-		serverGUI.startButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				try {
-					ServerSocket srvr = new ServerSocket(45000);
-					srvr.setReuseAddress(true);
-			        Socket skt = srvr.accept();
-			        System.out.println("Client has connected from " + skt.getRemoteSocketAddress().toString());
-			        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-			        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-			        // using JSON because it's easy
-			        JSONObject response = new JSONObject();
-			        
-			        File folder = new File(System.getProperty("user.dir") + "/videos/");
-			        for (final File fileEntry : folder.listFiles()) {
-			            if (fileEntry.isFile())
-			                response.append("files", fileEntry.getName());
-			        }
-			        out.println(response.toString());
-			        System.out.println("File list sent, awaiting response.");
-			        
-			        response = new JSONObject(in.readLine());
-			        String toStream = response.getString("request");
-			        System.out.println("Client requested " + toStream);
-			        
-			        PlayBin2 pb = startStreaming(toStream);
-			        
-			        // listen for commands
-			        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
-			        	String nextCommand = in.readLine();
-			        	System.out.println("Received '" + nextCommand + "'.");
-			        	response = new JSONObject(nextCommand);
-			        	String command = response.getString("command");
-			        	switch(command) {
-			        	case "play":
-			        		pb.setState(State.PLAYING);
-			        		break;
-			        	case "pause":
-			        		pb.setState(State.PAUSED);
-			        		break;
-			        	case "stop":
-			        		pb.setState(State.NULL);
-			        		break;
-			        	}
-			        }
-			        
-			        in.close();
-			        out.close();
-			        skt.close();
-			        srvr.close();
-				} catch(Exception e2) {
-					e2.printStackTrace();
-				}
-			}
-		});
+	public static void startServer() {
+		System.out.println("Starting testserver on port 45000...");
+		try {
+			ServerSocket srvr = new ServerSocket(45000);
+			srvr.setReuseAddress(true);
+	        Socket skt = srvr.accept();
+	        System.out.println("Client has connected from " + skt.getRemoteSocketAddress().toString());
+	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+	        // using JSON because it's easy
+	        JSONObject response = new JSONObject();
+	        
+	        File folder = new File(System.getProperty("user.dir") + "/videos/");
+	        for (final File fileEntry : folder.listFiles()) {
+	            if (fileEntry.isFile())
+	                response.append("files", fileEntry.getName());
+	        }
+	        out.println(response.toString());
+	        System.out.println("File list sent, awaiting response.");
+	        
+	        response = new JSONObject(in.readLine());
+	        String toStream = response.getString("request");
+	        System.out.println("Client requested " + toStream);
+	        
+	        PlayBin2 pb = startStreaming(toStream);
+	        
+	        // listen for commands
+	        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
+	        	String nextCommand = in.readLine();
+	        	System.out.println("Received '" + nextCommand + "'.");
+	        	response = new JSONObject(nextCommand);
+	        	String command = response.getString("command");
+	        	switch(command) {
+	        	case "play":
+	        		pb.setState(State.PLAYING);
+	        		break;
+	        	case "pause":
+	        		pb.setState(State.PAUSED);
+	        		break;
+	        	case "stop":
+	        		pb.setState(State.NULL);
+	        		break;
+	        	}
+	        }
+	        
+	        in.close();
+	        out.close();
+	        skt.close();
+	        srvr.close();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private static PlayBin2 startStreaming(String toStream) throws UnknownHostException, SocketException, InterruptedException {

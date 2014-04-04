@@ -38,6 +38,12 @@ public class ServerLauncher extends JFrame {
 		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> CTRL: SERVER STARTED");
+				Thread serverThread = new Thread() {
+					public void run() {
+						Server.startServer();
+					}
+				};
+				serverThread.start();
 			}
 		});
 		ctrlPanel.add(startButton);

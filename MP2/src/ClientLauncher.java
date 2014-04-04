@@ -5,6 +5,10 @@ import java.nio.file.*;
 import java.util.*;
 import javax.swing.*;
 
+import org.gstreamer.Element;
+import org.gstreamer.Gst;
+import org.gstreamer.swing.VideoComponent;
+
 
 public class ClientLauncher extends JFrame{
 	private static final long serialVersionUID = 5429778737562008920L;
@@ -21,9 +25,11 @@ public class ClientLauncher extends JFrame{
 	Map<String, JButton> buttons;
 	boolean playing = false;
 	boolean connected = false;
+	VideoComponent vc;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
+		Gst.init();
 		currpath = System.getProperty("user.dir");
 		setSize(1200,800);
 		setResizable(false);
@@ -42,6 +48,11 @@ public class ClientLauncher extends JFrame{
 		videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		videoPanel.setBackground(new Color(0,0,0));
 		mainContainer.add(videoPanel);
+		
+		vc = new VideoComponent();
+		vc.setPreferredSize(new Dimension(1200, 640));
+		vc.setBackground(Color.green);
+		videoPanel.add(vc);
 		
 		JPanel resPanel = new JPanel();
 		resPanel.setPreferredSize(new Dimension(200, 30));
@@ -123,6 +134,10 @@ public class ClientLauncher extends JFrame{
 		pushLog("> SYS: PATH " + currpath);
 	}
 	
+	public Element getVideoElement() {
+		return vc.getElement();
+	}
+	
 	/**
 	 * Tries to change the current playback state of the media.
 	 * When clicked:
@@ -134,6 +149,12 @@ public class ClientLauncher extends JFrame{
 	 */
 	private boolean playback() {
 		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
+		Thread clientThread = new Thread() {
+			public void run() {
+				Client.startClient(vc.getElement());
+			}
+		};
+		clientThread.start();
 		return playing;
 	}
 	
