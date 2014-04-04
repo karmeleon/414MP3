@@ -107,12 +107,12 @@ public class ClientLauncher extends JFrame{
 		optPanel.setPreferredSize(new Dimension(200,30));
 		mainContainer.add(optPanel);
 		
-		String[] resSettings = {"480p", "240p"};
+		String[] resSettings = {"240p", "480p"};
 		resCombo = new JComboBox(resSettings);
 		resCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(resCombo);
 		
-		String[] actSettings = {"Active", "Passive"};
+		String[] actSettings = {"Passive", "Active"};
 		actCombo = new JComboBox(actSettings);
 		actCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(actCombo);
@@ -148,14 +148,18 @@ public class ClientLauncher extends JFrame{
 	 * @return state of player, true = playing, false = remain paused
 	 */
 	private boolean playback() {
-		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
+		pushLog("> SYS: REQUEST " + getSettings());
 		Thread clientThread = new Thread() {
 			public void run() {
-				Client.startClient(vc.getElement());
+				Client.startClient(vc.getElement(), getSettings());
 			}
 		};
 		clientThread.start();
 		return playing;
+	}
+	
+	private String getSettings() {
+		return "" + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth;
 	}
 	
 	private void scanResource() throws IOException {

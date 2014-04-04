@@ -27,8 +27,18 @@ public class Client {
 	/**
 	 * @param args
 	 */
-	public static void startClient(Element videoSink) {
+	public static void startClient(Element videoSink, String settings) {
 		// TODO Auto-generated method stub
+		
+		int res = 0;
+		String mode = "";
+		int bw = 0;
+		String[] tokens = settings.split(" ");
+		
+		mode = tokens[0];
+		res = Integer.parseInt(tokens[1].substring(0, tokens[1].length() - 1));
+		bw = Integer.parseInt(tokens[2]);
+		
 		try {
 			Socket skt = new Socket("localhost", 45000);
 			skt.setReuseAddress(true);
@@ -36,20 +46,15 @@ public class Client {
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
 	
 	        JSONObject response = new JSONObject(in.readLine());
-	        System.out.println("Successfully connected to server at 127.0.0.1:45000. Available files:");
-	        JSONArray files = response.getJSONArray("files");
-	        for(int i = 0; i < files.length(); i++)
-	        	System.out.println(i + ": " + files.getString(i));
-	        System.out.println("Which file would you like to play?");
-	        Scanner s = new Scanner(System.in);
 	        response = new JSONObject();
-	        response.put("request", files.getString(s.nextInt()));
+	        response.put("request", "" + res + "p.mp4");
 	        out.println(response.toString());
-
+	        
 	        startStreaming(videoSink);
 	        
 	        //send commands
 	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
+	        Scanner s = new Scanner(System.in);
 	        String line;
 	        while(true) {
 	        	line = s.nextLine();
