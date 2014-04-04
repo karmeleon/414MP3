@@ -20,6 +20,7 @@ public class ClientLauncher extends JFrame{
 	
 	Map<String, JButton> buttons;
 	boolean playing = false;
+	boolean connected = false;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");

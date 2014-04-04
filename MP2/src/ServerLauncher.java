@@ -14,6 +14,7 @@ public class ServerLauncher extends JFrame {
 	String logtext = "";
 	JTextArea textArea;
 	JScrollPane scrollPane;
+	JButton startButton;
 	
 	public ServerLauncher() {
 		super("Server");
@@ -31,8 +32,9 @@ public class ServerLauncher extends JFrame {
 		ctrlPanel.setPreferredSize(new Dimension(500, 30));
 		mainContainer.add(ctrlPanel);
 		
-		JButton startButton = new JButton("Start");
+		startButton = new JButton("Start");
 		startButton.setMargin(new Insets(0,0,0,0));
+		
 		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> CTRL: SERVER STARTED");
