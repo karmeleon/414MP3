@@ -28,8 +28,6 @@ public class Client {
 	 * @param args
 	 */
 	public static void startClient(Element videoSink, String settings) {
-		// TODO Auto-generated method stub
-		
 		int res = 0;
 		String mode = "";
 		int bw = 0;
@@ -43,11 +41,10 @@ public class Client {
 			Socket skt = new Socket("localhost", 45000);
 			skt.setReuseAddress(true);
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-	
-	        JSONObject response = new JSONObject(in.readLine());
-	        response = new JSONObject();
-	        response.put("request", "" + res + "p.mp4");
+	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);        
+	        
+	        JSONObject response = new JSONObject();
+	        response.put("request", settings);
 	        out.println(response.toString());
 	        
 	        startStreaming(videoSink);
@@ -76,16 +73,19 @@ public class Client {
 	private static void startStreaming(final Element videoSink) {
 		Gst.init();
 		final Pipeline pipe = new Pipeline("pipeline");
-		final Element udpSrc = ElementFactory.make("udpsrc", "src");
+		Element udpSrc = ElementFactory.make("udpsrc", "src");
 		// in the real thing these'll just get sent over the control stream, but for now they're hardcoded
 		udpSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
 		udpSrc.set("uri", "udp://127.0.0.1:45001");
-		final Element depay = ElementFactory.make("rtpjpegdepay", "depay");
-		final Element decode = ElementFactory.make("jpegdec", "decode");
-		final Element color = ElementFactory.make("ffmpegcolorspace", "color");
-		//final Element sink = ElementFactory.make("autovideosink", "sink");
+		Element depay = ElementFactory.make("rtpjpegdepay", "depay");
+		Element decode = ElementFactory.make("jpegdec", "decode");
+		Element color = ElementFactory.make("ffmpegcolorspace", "color");
+		pipe.addMany(udpSrc, depay, decode, color, videoSink);
+        Element.linkMany(udpSrc, depay, decode, color, videoSink);
 		
 		// audio caps string is application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704
+		
+		/*
 		Element udpAudSrc = ElementFactory.make("udpsrc", "src2");
 		udpAudSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
 		udpAudSrc.set("uri", "udp://127.0.0.1:45002");
@@ -94,24 +94,9 @@ public class Client {
 		
 		pipe.addMany(udpAudSrc, audDepay, audSink);
 		Element.linkMany(udpAudSrc, audDepay, audSink);
-		
+		*/
 		Thread videoThread = new Thread() {
 			public void run() {
-				// VideoComponent videoComponent = new VideoComponent();
-	             // Element videosink = videoComponent.getElement();
-	             pipe.addMany(udpSrc, depay, decode, color, videoSink);
-	             Element.linkMany(udpSrc, depay, decode, color, videoSink);
-	             
-	             // Now create a JFrame to display the video output
-	             /*
-	             JFrame frame = new JFrame("Swing Video Test");
-	             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	             frame.add(videoComponent, BorderLayout.CENTER);
-	             videoComponent.setPreferredSize(new Dimension(720, 576));
-	             frame.pack();
-	             frame.setVisible(true);
-	             */
-	             // Start the pipeline processing
 	             pipe.setState(org.gstreamer.State.PLAYING);
 			}
 		};
