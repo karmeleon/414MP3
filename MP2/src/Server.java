@@ -30,10 +30,21 @@ public class Server {
 	        System.out.println("Client has connected from " + skt.getRemoteSocketAddress().toString());
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+	        // using JSON because it's easy
+	        /*
+	        JSONObject response = new JSONObject();
 	        
+	        File folder = new File(System.getProperty("user.dir") + "/videos/");
+	        for (final File fileEntry : folder.listFiles()) {
+	            if (fileEntry.isFile())
+	                response.append("files", fileEntry.getName());
+	        }
+	        out.println(response.toString());
+	        System.out.println("File list sent, awaiting response.");
+	        */
 	        JSONObject response = new JSONObject(in.readLine());
 	        String settings = response.getString("request");
-	        System.out.println("> REQ: " + settings);
+	        System.out.println("> SYS: REQ " + settings);
 	        
 	        PlayBin2 pb = startStreaming(settings);
 	        
@@ -66,20 +77,16 @@ public class Server {
 	}
 	
 	private static PlayBin2 startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
-		int res = 0;               // resolution 240p/480p
-		String mode = "";          // active/passive
-		int bw = 0;                // bandwidth
-		String[] tokens = settings.split(" ");
-		
-		mode = tokens[0];
-		res = Integer.parseInt(tokens[1].substring(0, tokens[1].length() - 1));
-		bw = Integer.parseInt(tokens[2]);
+		String[] s = settings.split(" ");
+		String resolution = s[0];               // 240p/480p
+		String attribute = s[1];                // Passive/Active
+		int bandwidth = Integer.parseInt(s[2]); // Some amount
 		
 		final int port = 45001;
 		// create the pipeline here
 		Gst.init();
 		final PlayBin2 playbin = new PlayBin2("VideoPlayer");
-        playbin.setInputFile(new File("videos/" + res + "p.mp4"));
+        playbin.setInputFile(new File("videos/" + resolution + ".mp4"));
         
         Bin vidBin = new Bin("vidbin");
         
@@ -111,6 +118,8 @@ public class Server {
         playbin.setAudioSink(audBin);
         
         playbin.setState(State.PLAYING);
+        //Gst.main();
+        //playbin.setState(State.NULL);
         return playbin;
 	}
 

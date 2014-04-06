@@ -108,12 +108,12 @@ public class ClientLauncher extends JFrame{
 		mainContainer.add(optPanel);
 		
 		String[] resSettings = {"240p", "480p"};
-		resCombo = new JComboBox(resSettings);
+		resCombo = new JComboBox<String>(resSettings);
 		resCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(resCombo);
 		
 		String[] actSettings = {"Passive", "Active"};
-		actCombo = new JComboBox(actSettings);
+		actCombo = new JComboBox<String>(actSettings);
 		actCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(actCombo);
 		
@@ -130,7 +130,7 @@ public class ClientLauncher extends JFrame{
 		pushLog("Starting Client...");
 		setVisible(true);
 		
-		Path path = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
+		// Path path = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
 		pushLog("> SYS: PATH " + currpath);
 	}
 	
@@ -148,23 +148,21 @@ public class ClientLauncher extends JFrame{
 	 * @return state of player, true = playing, false = remain paused
 	 */
 	private boolean playback() {
-		pushLog("> SYS: REQUEST " + getSettings());
+		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
 		Thread clientThread = new Thread() {
 			public void run() {
-				Client.startClient(vc.getElement(), getSettings());
+				String settings = "" + (resCombo.getSelectedIndex() == 0 ? "240p" : "480p")
+						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth;
+				Client.startClient(vc.getElement(), settings);
 			}
 		};
 		clientThread.start();
 		return playing;
 	}
 	
-	private String getSettings() {
-		return "" + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth;
-	}
-	
 	private void scanResource() throws IOException {
 		BufferedReader br = new BufferedReader(new FileReader("resource.txt"));
-		String currline = "";
 		try {
 			bandwidth = Integer.parseInt(br.readLine());
 		} catch (NumberFormatException e) {
