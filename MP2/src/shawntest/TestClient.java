@@ -14,12 +14,17 @@ import java.util.Scanner;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import org.gstreamer.Bin;
+import org.gstreamer.Bus;
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
 import org.gstreamer.ElementFactory;
+import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
+import org.gstreamer.GstObject;
 import org.gstreamer.Pipeline;
 import org.gstreamer.State;
+import org.gstreamer.elements.good.RTPBin;
 import org.gstreamer.swing.VideoComponent;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -72,33 +77,120 @@ public class TestClient {
 
 	private static void startStreaming() {
 		Gst.init();
+		
+		final int port = 45001;
+		
 		final Pipeline pipe = new Pipeline("pipeline");
-		final Element udpSrc = ElementFactory.make("udpsrc", "src");
 		// in the real thing these'll just get sent over the control stream, but for now they're hardcoded
-		udpSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
-		udpSrc.set("uri", "udp://127.0.0.1:45001");
-		final Element depay = ElementFactory.make("rtpjpegdepay", "depay");
-		final Element decode = ElementFactory.make("jpegdec", "decode");
-		final Element color = ElementFactory.make("ffmpegcolorspace", "color");
-		//final Element sink = ElementFactory.make("autovideosink", "sink");
 		
-		// audio caps string is application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704
-		Element udpAudSrc = ElementFactory.make("udpsrc", "src2");
-		udpAudSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-		udpAudSrc.set("uri", "udp://127.0.0.1:45002");
-		Element audDepay = ElementFactory.make("rtpL16depay", "auddepay");
-		Element audSink = ElementFactory.make("autoaudiosink", "audsink");
 		
-		pipe.addMany(udpAudSrc, audDepay, audSink);
-		Element.linkMany(udpAudSrc, audDepay, audSink);
+		// UDP
+		
+		// VIDEO
+		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
+		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
+		//udpVideoSrc.set("host", "127.0.0.1");
+		//udpVideoSrc.set("port", "" + port);
+		udpVideoSrc.set("uri", "udp://127.0.0.1:" + port);
+		
+		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
+		//videoRtcpIn.set("host", "127.0.0.1");
+		//videoRtcpIn.set("port", "" + (port + 1));
+		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 1));
+		
+		Element videoRtcpOut = ElementFactory.make("udpsink", "snk1");
+		videoRtcpOut.set("host", "127.0.0.1");
+		videoRtcpOut.set("port", "" + (port + 5));
+		videoRtcpOut.set("sync", "false");
+		videoRtcpOut.set("async", "false");
+		
+		// AUDIO
+		Element udpAudioSrc = ElementFactory.make("udpsrc", "src2");
+		udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+		//udpAudioSrc.set("host", "127.0.0.1");
+		//udpAudioSrc.set("port", "" + (port + 2));
+		udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
+		
+		Element audioRtcpIn = ElementFactory.make("udpsrc", "src4");
+		//audioRtcpIn.set("host", "127.0.0.1");
+		//audioRtcpIn.set("port", "" + (port + 3));
+		audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
+		
+		Element audioRtcpOut = ElementFactory.make("udpsink", "snk2");
+		audioRtcpOut.set("host", "127.0.0.1");
+		audioRtcpOut.set("port", "" + (port + 7));
+		audioRtcpOut.set("sync", "false");
+		audioRtcpOut.set("async", "false");
+		
+		pipe.addMany(udpVideoSrc, udpAudioSrc, videoRtcpIn, audioRtcpIn, videoRtcpOut, audioRtcpOut);
+		
+		// VIDEO BIN
+		
+		final Bin videoBin = new Bin("videoBin");
+		
+		final Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
+		final Element videoDecode = ElementFactory.make("jpegdec", "decode");
+		final Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
+		
+		videoBin.addMany(videoDepay, videoDecode, videoColor);
+		Element.linkMany(videoDepay, videoDecode, videoColor);
+		
+		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
+		pipe.add(videoBin);
+		
+		// AUDIO BIN
+		
+		final Bin audioBin = new Bin("audioBin");
+		
+		final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
+		final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
+		
+		audioBin.addMany(audioDepay, audioSink);
+		Element.linkMany(audioDepay, audioSink);
+		
+		audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
+		pipe.add(audioBin);
+		
+		// RTPBIN
+		
+		RTPBin rtp = new RTPBin("rtp");
+		pipe.add(rtp);
+		
+		Element.linkPads(udpVideoSrc, "src", rtp, "recv_rtp_sink_0");
+		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
+		Element.linkPads(rtp, "send_rtcp_src_0", videoRtcpOut, "sink");
+		Element.linkMany(rtp, videoBin);
+		
+		Element.linkPads(udpAudioSrc, "src", rtp, "recv_rtp_sink_1");
+		Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
+		Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
+		Element.linkMany(rtp, audioBin);
+		
+		// BUS
+		
+		Bus bus = pipe.getBus();
+        
+        bus.connect(new Bus.ERROR() {
+            public void errorMessage(GstObject source, int code, String message) {
+                System.out.println("Error: code=" + code + " message=" + message);
+            }
+        });
+        bus.connect(new Bus.EOS() {
+
+            public void endOfStream(GstObject source) {
+                pipe.setState(State.NULL);
+                System.out.println("EOS");
+                System.exit(0);
+            }
+        });
 		
 		SwingUtilities.invokeLater(new Runnable() {
 
             public void run() {
                 VideoComponent videoComponent = new VideoComponent();
-                Element videosink = videoComponent.getElement();
-                pipe.addMany(udpSrc, depay, decode, color, videosink);
-                Element.linkMany(udpSrc, depay, decode, color, videosink);
+                Element videoSink = videoComponent.getElement();
+                videoBin.add(videoSink);
+                Element.linkMany(videoColor, videoSink);
                 
                 // Now create a JFrame to display the video output
                 JFrame frame = new JFrame("Swing Video Test");

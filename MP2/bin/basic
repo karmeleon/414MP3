@@ -1,0 +1,24 @@
+Basic Pipeline
+
+SERVER:
+$ gst-launch-0.10 -v filesrc location="beauty.mp4" 
+! decodebin2 
+! queue 
+! jpegenc 
+! rtpjpegpay 
+! udpsink host=127.0.0.1 port=5000 sync=true
+
+CLIENT:
+$ gst-launch-0.10 -v udpsrc uri="udp://127.0.0.1:5000" 
+! "application/x-rtp, 
+	media=(string)video, 
+	clock-rate=(int)90000, 
+	encoding-name=(string)JPEG, 
+	payload=(int)96, 
+	ssrc=(uint)2156703816, c
+	lock-base=(uint)1678649553, 
+	seqnum-base=(uint)31324" 
+! rtpjpegdepay 
+! jpegdec 
+! ffmpegcolorspace 
+! autovideosink
