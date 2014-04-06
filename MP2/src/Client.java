@@ -1,6 +1,9 @@
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
@@ -27,13 +30,16 @@ public class Client {
 	/**
 	 * @param args
 	 */
+	
+	static PrintWriter out;
+	
 	public static void startClient(Element videoSink, String settings) {
 		// TODO Auto-generated method stub
 		try {
 			Socket skt = new Socket("localhost", 45000);
 			skt.setReuseAddress(true);
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+	        out = new PrintWriter(skt.getOutputStream(), true);
 	      
 	        JSONObject response = new JSONObject();
 	        response.put("request", settings);
@@ -41,7 +47,7 @@ public class Client {
 
 	        startStreaming(videoSink, settings);
 	        
-	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
+	        // System.out.println("Listening for commands. Known commands include play, pause, and stop.");
 	        String line;
 	        Scanner s = new Scanner(System.in);
 	        while(true) {
@@ -94,11 +100,39 @@ public class Client {
 
 		Thread videoThread = new Thread() {
 			public void run() {
-	             
 	             pipe.setState(org.gstreamer.State.PLAYING);
 			}
 		};
 		videoThread.start();
+	}
+	
+	public static void updateResource() {
+		int bandwidth = 0;
+		BufferedReader br = null;
+		try {
+			br = new BufferedReader(new FileReader("resource.txt"));
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		try {
+			bandwidth = Integer.parseInt(br.readLine());
+		} catch (NumberFormatException e) {
+			// pushLog("> RSRC: BAD VALUE");
+		} catch (IOException e) {
+			// pushLog("> RSRC: BAD VALUE");
+		}
+		try {
+			br.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		System.out.println("RSRC: " + bandwidth);
+		JSONObject response = new JSONObject();
+        response.put("bandwidth", "" + bandwidth);
+        out.println(response.toString());
 	}
 
 }
