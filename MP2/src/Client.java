@@ -39,7 +39,7 @@ public class Client {
 	        response.put("request", settings);
 	        out.println(response.toString());
 
-	        startStreaming(videoSink);
+	        startStreaming(videoSink, settings);
 	        
 	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
 	        String line;
@@ -61,7 +61,12 @@ public class Client {
 		}
 	}
 
-	private static void startStreaming(final Element videoSink) {
+	private static void startStreaming(final Element videoSink, String settings) {
+		String[] s = settings.split(" ");
+		String resolution = s[0];               // 240p/480p
+		String attribute = s[1];                // Passive/Active
+		int bandwidth = Integer.parseInt(s[2]); // Some amount
+		
 		Gst.init();
 		final Pipeline pipe = new Pipeline("pipeline");
 		final Element udpSrc = ElementFactory.make("udpsrc", "src");
@@ -73,20 +78,23 @@ public class Client {
 		final Element color = ElementFactory.make("ffmpegcolorspace", "color");
 		//final Element sink = ElementFactory.make("autovideosink", "sink");
 		
-		// audio caps string is application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704
-		Element udpAudSrc = ElementFactory.make("udpsrc", "src2");
-		udpAudSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-		udpAudSrc.set("uri", "udp://127.0.0.1:45002");
-		Element audDepay = ElementFactory.make("rtpL16depay", "auddepay");
-		Element audSink = ElementFactory.make("autoaudiosink", "audsink");
+		pipe.addMany(udpSrc, depay, decode, color, videoSink);
+        Element.linkMany(udpSrc, depay, decode, color, videoSink);
 		
-		pipe.addMany(udpAudSrc, audDepay, audSink);
-		Element.linkMany(udpAudSrc, audDepay, audSink);
-		
+        if (attribute.equalsIgnoreCase("active")) {
+        	// audio caps string is application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704
+    		Element udpAudSrc = ElementFactory.make("udpsrc", "src2");
+    		udpAudSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+    		udpAudSrc.set("uri", "udp://127.0.0.1:45002");
+    		Element audDepay = ElementFactory.make("rtpL16depay", "auddepay");
+    		Element audSink = ElementFactory.make("autoaudiosink", "audsink");
+    		pipe.addMany(udpAudSrc, audDepay, audSink);
+    		Element.linkMany(udpAudSrc, audDepay, audSink);
+        }
+
 		Thread videoThread = new Thread() {
 			public void run() {
-	             pipe.addMany(udpSrc, depay, decode, color, videoSink);
-	             Element.linkMany(udpSrc, depay, decode, color, videoSink);
+	             
 	             pipe.setState(org.gstreamer.State.PLAYING);
 			}
 		};

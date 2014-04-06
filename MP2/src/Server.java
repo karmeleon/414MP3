@@ -91,22 +91,25 @@ public class Server {
         
         playbin.setVideoSink(vidBin);
         
-        Bin audBin = new Bin("audbin");
-        
-        // assuming raw audio unless told otherwise
-        Element audConv = ElementFactory.make("audioconvert", "audioconv");
-        Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
-        Element audSink = ElementFactory.make("udpsink", "aududpsink");
-        audSink.set("host", "127.0.0.1");
-        audSink.set("port", "" + (port + 1));
-        audSink.set("sync", "true");
-        audBin.addMany(audConv, audPayload, audSink);
-        Element.linkMany(audConv, audPayload, audSink);
-        audBin.addPad(new GhostPad("sink", audConv.getStaticPad("sink")));
-        
-        playbin.setAudioSink(audBin);
+        if (attribute.equalsIgnoreCase("active")) {
+        	Bin audBin = new Bin("audbin");
+            // assuming raw audio unless told otherwise
+            
+            Element audConv = ElementFactory.make("audioconvert", "audioconv");
+            Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
+            Element audSink = ElementFactory.make("udpsink", "aududpsink");
+            audSink.set("host", "127.0.0.1");
+            audSink.set("port", "" + (port + 1));
+            audSink.set("sync", "true");
+            audBin.addMany(audConv, audPayload, audSink);
+            Element.linkMany(audConv, audPayload, audSink);
+            audBin.addPad(new GhostPad("sink", audConv.getStaticPad("sink")));
+            
+            playbin.setAudioSink(audBin);
+        }
         
         playbin.setState(State.PLAYING);
+        // playbin.set
         return playbin;
 	}
 

@@ -94,6 +94,9 @@ public class ClientLauncher extends JFrame{
 		});
 		ctrlPanel.add(buttons.get("Play"));
 		
+		makeCtrlButton("Pause");
+		ctrlPanel.add(buttons.get("Pause"));
+		
 		makeCtrlButton("Stop");
 		ctrlPanel.add(buttons.get("Stop"));
 		buttons.get("Stop").addActionListener(new ActionListener() {
