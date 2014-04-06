@@ -26,6 +26,7 @@ import org.gstreamer.Pipeline;
 import org.gstreamer.State;
 import org.gstreamer.elements.good.RTPBin;
 import org.gstreamer.swing.VideoComponent;
+import org.gstreamer.utils.GstDebugUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -89,13 +90,9 @@ public class TestClient {
 		// VIDEO
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
-		//udpVideoSrc.set("host", "127.0.0.1");
-		//udpVideoSrc.set("port", "" + port);
 		udpVideoSrc.set("uri", "udp://127.0.0.1:" + port);
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
-		//videoRtcpIn.set("host", "127.0.0.1");
-		//videoRtcpIn.set("port", "" + (port + 1));
 		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 1));
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "snk1");
@@ -104,16 +101,14 @@ public class TestClient {
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
 		
+		System.out.println("Video udp ports init'd");
+		
 		// AUDIO
 		Element udpAudioSrc = ElementFactory.make("udpsrc", "src2");
 		udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-		//udpAudioSrc.set("host", "127.0.0.1");
-		//udpAudioSrc.set("port", "" + (port + 2));
 		udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
 		
 		Element audioRtcpIn = ElementFactory.make("udpsrc", "src4");
-		//audioRtcpIn.set("host", "127.0.0.1");
-		//audioRtcpIn.set("port", "" + (port + 3));
 		audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
 		
 		Element audioRtcpOut = ElementFactory.make("udpsink", "snk2");
@@ -121,6 +116,8 @@ public class TestClient {
 		audioRtcpOut.set("port", "" + (port + 7));
 		audioRtcpOut.set("sync", "false");
 		audioRtcpOut.set("async", "false");
+		
+		System.out.println("Audio udp ports init'd");
 		
 		pipe.addMany(udpVideoSrc, udpAudioSrc, videoRtcpIn, audioRtcpIn, videoRtcpOut, audioRtcpOut);
 		
@@ -138,6 +135,8 @@ public class TestClient {
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
 		pipe.add(videoBin);
 		
+		System.out.println("VideoBin init'd");
+		
 		// AUDIO BIN
 		
 		final Bin audioBin = new Bin("audioBin");
@@ -150,6 +149,8 @@ public class TestClient {
 		
 		audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 		pipe.add(audioBin);
+		
+		System.out.println("AudioBin init'd");
 		
 		// RTPBIN
 		
@@ -204,6 +205,8 @@ public class TestClient {
                 pipe.setState(State.PLAYING);
             }
         });
+		// GST_DEBUG_DUMP_DOT_DIR
+        GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "client");
 	}
 
 }

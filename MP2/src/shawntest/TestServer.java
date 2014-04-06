@@ -103,12 +103,6 @@ public class TestServer {
 		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
-		/*
-		Element videosink = ElementFactory.make("udpsink", "vnetsink");
-		videosink.set("host", "127.0.0.1");
-		videosink.set("port", "" + port);
-		videosink.set("sync", "true");
-		*/
 		
 		videoBin.addMany(videoenc, videopay);
 		Element.linkMany(videoenc, videopay);
@@ -120,12 +114,6 @@ public class TestServer {
 		
 		Element audConv = ElementFactory.make("audioconvert", "audioconv");
         Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
-        /*
-        Element audSink = ElementFactory.make("udpsink", "aududpsink");
-        audSink.set("host", "127.0.0.1");
-        audSink.set("port", "" + (port + 1));
-        audSink.set("sync", "true");
-        */
         
         audioBin.addMany(audConv, audPayload);
         Element.linkMany(audConv, audPayload);
@@ -174,7 +162,6 @@ public class TestServer {
 		videoRtcpOut.set("async", "false");
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "videortcpin");
-		//videoRtcpIn.set("port", "" + (port + 5));
 		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 5));
 		
 		Element audioDataOut = ElementFactory.make("udpsink", "audiodatout");
@@ -188,7 +175,6 @@ public class TestServer {
 		audioRtcpOut.set("async", "false");
 		
 		Element audioRtcpIn = ElementFactory.make("udpsrc", "audiortcpin");
-		//audioRtcpIn.set("port", "" + (port + 7));
 		audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 7));
 		
 		pipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn, audioDataOut, audioRtcpOut, audioRtcpIn);
@@ -220,10 +206,11 @@ public class TestServer {
 
         });
 		
-        GstDebugUtils.gstDebugBinToDotFile(pipe, 0, "server");
+        // GST_DEBUG_DUMP_DOT_DIR
+        GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "server");
         
 		pipe.play();
-        Gst.main();
+        //Gst.main();
         return pipe;
 	}
 
