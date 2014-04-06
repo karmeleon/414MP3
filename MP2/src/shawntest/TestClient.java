@@ -154,28 +154,48 @@ public class TestClient {
 		
 		// RTPBIN
 		
-		RTPBin rtp = new RTPBin("rtp");
+		final RTPBin rtp = new RTPBin("rtp");
 		pipe.add(rtp);
 		
 		Element.linkPads(udpVideoSrc, "src", rtp, "recv_rtp_sink_0");
 		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
 		Element.linkPads(rtp, "send_rtcp_src_0", videoRtcpOut, "sink");
-		Element.linkMany(rtp, videoBin);
+		//Element.linkMany(rtp, videoBin);
 		
 		Element.linkPads(udpAudioSrc, "src", rtp, "recv_rtp_sink_1");
 		Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
 		Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
-		Element.linkMany(rtp, audioBin);
+		//Element.linkMany(rtp, audioBin);
 		
 		// BUS
+		
+		rtp.connect(new RTPBin.ON_NEW_SSRC() {
+			@Override
+			public void onNewSsrc(RTPBin arg0, int arg1, int arg2) {
+				// TODO Auto-generated method stub
+				System.out.println("SSRC: session " + arg1 + ", SSRC" + arg2);
+				if(arg1 == 0) {
+					System.out.println("found video SSRC, trying to link to pad recv_rtp_src_0_" + getUnsignedInt(arg2) + "_96");
+	                System.out.println(Element.linkPads(rtp, "recv_rtp_src_0_" + getUnsignedInt(arg2) + "_96", videoBin, "sink"));
+	                
+				}
+				else if(arg1 == 1) {
+					System.out.println("found audio SSRC");
+					
+				}
+				else {
+					System.out.println("found some other SSRC");
+				}
+			}
+		});
 		
 		Bus bus = pipe.getBus();
         
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
-            	// GST_DEBUG_DUMP_DOT_DIR
-                GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "client");
                 System.out.println("Error: code=" + code + " message=" + message);
+             // GST_DEBUG_DUMP_DOT_DIR
+                GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "client");
             }
         });
         bus.connect(new Bus.EOS() {
@@ -205,8 +225,11 @@ public class TestClient {
                 
                 // Start the pipeline processing
                 pipe.setState(State.PLAYING);
+             
             }
         });
 	}
-
+	public static long getUnsignedInt(int x) {
+	    return x & 0x00000000ffffffffL;
+	}
 }
