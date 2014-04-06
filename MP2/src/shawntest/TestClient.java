@@ -173,6 +173,8 @@ public class TestClient {
         
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
+            	// GST_DEBUG_DUMP_DOT_DIR
+                GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "client");
                 System.out.println("Error: code=" + code + " message=" + message);
             }
         });
@@ -205,8 +207,6 @@ public class TestClient {
                 pipe.setState(State.PLAYING);
             }
         });
-		// GST_DEBUG_DUMP_DOT_DIR
-        GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "client");
 	}
 
 }

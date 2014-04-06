@@ -134,6 +134,8 @@ public class TestServer {
 				if(struct.getName().startsWith("audio/")) {
 					System.out.println("Linking audio pad: " + struct.getName());
 					pad.link(audioBin.getStaticPad("sink"));
+					// GST_DEBUG_DUMP_DOT_DIR
+			        //GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "server"); THIS PIPELINE IS CORRECT
 				} else if(struct.getName().startsWith("video/")) {
 					System.out.println("Linking video pad: " + struct.getName());
 					pad.link(videoBin.getStaticPad("sink"));
@@ -205,9 +207,6 @@ public class TestServer {
             }
 
         });
-		
-        // GST_DEBUG_DUMP_DOT_DIR
-        GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "server");
         
 		pipe.play();
         //Gst.main();
