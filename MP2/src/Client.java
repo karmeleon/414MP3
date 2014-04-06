@@ -34,26 +34,16 @@ public class Client {
 			skt.setReuseAddress(true);
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-	/*
-	        JSONObject response = new JSONObject(in.readLine());
-	        System.out.println("Successfully connected to server at 127.0.0.1:45000. Available files:");
-	        JSONArray files = response.getJSONArray("files");
-	        for(int i = 0; i < files.length(); i++)
-	        	System.out.println(i + ": " + files.getString(i));
-	        System.out.println("Which file would you like to play?");
-	        */
-	        Scanner s = new Scanner(System.in);
 	      
 	        JSONObject response = new JSONObject();
-	        // response.put("request", files.getString(s.nextInt()));
 	        response.put("request", settings);
 	        out.println(response.toString());
 
 	        startStreaming(videoSink);
 	        
-	        //send commands
 	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
 	        String line;
+	        Scanner s = new Scanner(System.in);
 	        while(true) {
 	        	line = s.nextLine();
 	        	response = new JSONObject();

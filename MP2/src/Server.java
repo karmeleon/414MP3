@@ -30,18 +30,7 @@ public class Server {
 	        System.out.println("Client has connected from " + skt.getRemoteSocketAddress().toString());
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-	        // using JSON because it's easy
-	        /*
-	        JSONObject response = new JSONObject();
-	        
-	        File folder = new File(System.getProperty("user.dir") + "/videos/");
-	        for (final File fileEntry : folder.listFiles()) {
-	            if (fileEntry.isFile())
-	                response.append("files", fileEntry.getName());
-	        }
-	        out.println(response.toString());
-	        System.out.println("File list sent, awaiting response.");
-	        */
+
 	        JSONObject response = new JSONObject(in.readLine());
 	        String settings = response.getString("request");
 	        System.out.println("> SYS: REQ " + settings);
@@ -118,8 +107,6 @@ public class Server {
         playbin.setAudioSink(audBin);
         
         playbin.setState(State.PLAYING);
-        //Gst.main();
-        //playbin.setState(State.NULL);
         return playbin;
 	}
 
