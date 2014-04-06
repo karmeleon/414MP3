@@ -27,30 +27,23 @@ public class Client {
 	/**
 	 * @param args
 	 */
-	public static void startClient(Element videoSink) {
+	public static void startClient(Element videoSink, String settings) {
 		// TODO Auto-generated method stub
 		try {
 			Socket skt = new Socket("localhost", 45000);
 			skt.setReuseAddress(true);
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-	
-	        JSONObject response = new JSONObject(in.readLine());
-	        System.out.println("Successfully connected to server at 127.0.0.1:45000. Available files:");
-	        JSONArray files = response.getJSONArray("files");
-	        for(int i = 0; i < files.length(); i++)
-	        	System.out.println(i + ": " + files.getString(i));
-	        System.out.println("Which file would you like to play?");
-	        Scanner s = new Scanner(System.in);
-	        response = new JSONObject();
-	        response.put("request", files.getString(s.nextInt()));
+	      
+	        JSONObject response = new JSONObject();
+	        response.put("request", settings);
 	        out.println(response.toString());
 
 	        startStreaming(videoSink);
 	        
-	        //send commands
 	        System.out.println("Listening for commands. Known commands include play, pause, and stop.");
 	        String line;
+	        Scanner s = new Scanner(System.in);
 	        while(true) {
 	        	line = s.nextLine();
 	        	response = new JSONObject();
@@ -92,21 +85,8 @@ public class Client {
 		
 		Thread videoThread = new Thread() {
 			public void run() {
-				// VideoComponent videoComponent = new VideoComponent();
-	             // Element videosink = videoComponent.getElement();
 	             pipe.addMany(udpSrc, depay, decode, color, videoSink);
 	             Element.linkMany(udpSrc, depay, decode, color, videoSink);
-	             
-	             // Now create a JFrame to display the video output
-	             /*
-	             JFrame frame = new JFrame("Swing Video Test");
-	             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	             frame.add(videoComponent, BorderLayout.CENTER);
-	             videoComponent.setPreferredSize(new Dimension(720, 576));
-	             frame.pack();
-	             frame.setVisible(true);
-	             */
-	             // Start the pipeline processing
 	             pipe.setState(org.gstreamer.State.PLAYING);
 			}
 		};
