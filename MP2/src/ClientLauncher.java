@@ -1,6 +1,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.net.Socket;
 import java.nio.file.*;
 import java.util.*;
 import javax.swing.*;
@@ -8,6 +9,7 @@ import javax.swing.*;
 import org.gstreamer.Element;
 import org.gstreamer.Gst;
 import org.gstreamer.swing.VideoComponent;
+import org.json.JSONObject;
 
 
 public class ClientLauncher extends JFrame{
@@ -21,6 +23,8 @@ public class ClientLauncher extends JFrame{
 	String rsrc;
 	JComboBox<String> resCombo;
 	JComboBox<String> actCombo;
+	Socket bandwidthSKT = null;
+	PrintWriter bandwidthWriter;
 	
 	Map<String, JButton> buttons;
 	boolean playing = false;
@@ -66,12 +70,24 @@ public class ClientLauncher extends JFrame{
 		buttons.get("Refresh").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> RSRC: UPDATED");
+				Client.updateResource();
+				/*
 				try {
+					if (bandwidthSKT == null) {
+						bandwidthSKT = new Socket("localhost", 45777);
+						bandwidthSKT.setReuseAddress(true);
+				        bandwidthWriter = new PrintWriter(bandwidthSKT.getOutputStream(), true);
+					}
 					scanResource();
+			        JSONObject response = new JSONObject();
+			        response.put("request", "" + bandwidth);
+			        bandwidthWriter.println(response.toString());
+			        pushLog("> SYS: Sent Bandwidth INFO");
 				} 
 				catch (IOException e1) {
 					e1.printStackTrace();
 				}
+				*/
 			}
 		});
 		
@@ -93,6 +109,9 @@ public class ClientLauncher extends JFrame{
 			}
 		});
 		ctrlPanel.add(buttons.get("Play"));
+		
+		makeCtrlButton("Pause");
+		ctrlPanel.add(buttons.get("Pause"));
 		
 		makeCtrlButton("Stop");
 		ctrlPanel.add(buttons.get("Stop"));

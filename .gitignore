@@ -1,2 +1,9 @@
+<<<<<<< HEAD
 
 *.class
+=======
+MP2/bin/
+MP2/bin/basic
+.metadata/
+
+>>>>>>> master
