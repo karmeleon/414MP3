@@ -22,6 +22,7 @@ import org.gstreamer.ElementFactory;
 import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
 import org.gstreamer.GstObject;
+import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
 import org.gstreamer.State;
 import org.gstreamer.elements.good.RTPBin;
@@ -160,31 +161,22 @@ public class TestClient {
 		Element.linkPads(udpVideoSrc, "src", rtp, "recv_rtp_sink_0");
 		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
 		Element.linkPads(rtp, "send_rtcp_src_0", videoRtcpOut, "sink");
-		//Element.linkMany(rtp, videoBin);
 		
 		Element.linkPads(udpAudioSrc, "src", rtp, "recv_rtp_sink_1");
 		Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
 		Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
-		//Element.linkMany(rtp, audioBin);
 		
 		// BUS
 		
-		rtp.connect(new RTPBin.ON_NEW_SSRC() {
+		rtp.connect(new Element.PAD_ADDED() {
 			@Override
-			public void onNewSsrc(RTPBin arg0, int arg1, int arg2) {
-				// TODO Auto-generated method stub
-				System.out.println("SSRC: session " + arg1 + ", SSRC" + arg2);
-				if(arg1 == 0) {
-					System.out.println("found video SSRC, trying to link to pad recv_rtp_src_0_" + getUnsignedInt(arg2) + "_96");
-	                System.out.println(Element.linkPads(rtp, "recv_rtp_src_0_" + getUnsignedInt(arg2) + "_96", videoBin, "sink"));
-	                
-				}
-				else if(arg1 == 1) {
-					System.out.println("found audio SSRC");
-					
-				}
-				else {
-					System.out.println("found some other SSRC");
+			public void padAdded(Element arg0, Pad arg1) {
+				if(arg1.getName().startsWith("recv_rtp_src_0")) {
+					System.out.println("found video pad, trying to link to pad " + arg1.getName());
+	                System.out.println(arg1.link(videoBin.getStaticPad("sink")));
+				} else if(arg1.getName().startsWith("recv_rtp_src_1")) {
+					System.out.println("found audio pad, trying to link to pad " + arg1.getName());
+					System.out.println(arg1.link(audioBin.getStaticPad("sink")));
 				}
 			}
 		});
