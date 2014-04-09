@@ -5,5 +5,7 @@
 MP2/bin/
 MP2/bin/basic
 .metadata/
+MP2/.DS_Store
+.DS_Store
 
 >>>>>>> master
