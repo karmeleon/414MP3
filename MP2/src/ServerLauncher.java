@@ -15,6 +15,7 @@ public class ServerLauncher extends JFrame {
 	JTextArea textArea;
 	JScrollPane scrollPane;
 	JButton startButton;
+	ServerLauncher serverGUI;
 	
 	public ServerLauncher() {
 		super("Server");
@@ -37,10 +38,10 @@ public class ServerLauncher extends JFrame {
 		
 		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				pushLog("> CTRL: SERVER STARTED");
+				pushLog("> CTRL: Starting Server ...");
 				Thread serverThread = new Thread() {
 					public void run() {
-						Server.startServer();
+						Server.startServer(textArea);
 					}
 				};
 				serverThread.start();
@@ -62,7 +63,7 @@ public class ServerLauncher extends JFrame {
 		setVisible(true);
 	}
 	
-	private void pushLog(String line) {
+	public void pushLog(String line) {
 		textArea.setText(textArea.getText() + line + "\n");
 	}
 	

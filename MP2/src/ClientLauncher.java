@@ -71,23 +71,6 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> RSRC: UPDATED");
 				Client.updateResource();
-				/*
-				try {
-					if (bandwidthSKT == null) {
-						bandwidthSKT = new Socket("localhost", 45777);
-						bandwidthSKT.setReuseAddress(true);
-				        bandwidthWriter = new PrintWriter(bandwidthSKT.getOutputStream(), true);
-					}
-					scanResource();
-			        JSONObject response = new JSONObject();
-			        response.put("request", "" + bandwidth);
-			        bandwidthWriter.println(response.toString());
-			        pushLog("> SYS: Sent Bandwidth INFO");
-				} 
-				catch (IOException e1) {
-					e1.printStackTrace();
-				}
-				*/
 			}
 		});
 		
@@ -153,10 +136,6 @@ public class ClientLauncher extends JFrame{
 		pushLog("> SYS: PATH " + currpath);
 	}
 	
-	public Element getVideoElement() {
-		return vc.getElement();
-	}
-	
 	/**
 	 * Tries to change the current playback state of the media.
 	 * When clicked:
@@ -173,7 +152,7 @@ public class ClientLauncher extends JFrame{
 				String settings = "" + (resCombo.getSelectedIndex() == 0 ? "240p" : "480p")
 						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth;
-				Client.startClient(vc.getElement(), settings);
+				Client.startClient(vc, settings, textArea);
 			}
 		};
 		clientThread.start();
