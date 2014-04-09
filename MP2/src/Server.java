@@ -64,8 +64,24 @@ public class Server {
 	        	
 	        	json_msg = new JSONObject(nextMsg);
 	        	String command = json_msg.getString("command");
-	        	String bandwidth = json_msg.getString("bandwidth");
+	        	// String command = json_msg.getString("command");
+	        	// String bandwidth = json_msg.getString("bandwidth");
 	        	
+	        	switch(command) {
+	        	case "play":
+	        		pb.setState(State.PLAYING);
+	        		break;
+	        	case "pause":
+	        		pb.setState(State.PAUSED);
+	        		break;
+	        	case "stop":
+	        		pb.setState(State.NULL);
+	        		break;
+	        	default :
+	        		pushLog("> SYS: SET BW " + command);
+	        		break;
+	        	}
+	        	/*
 	        	if (bandwidth.length() != 0) {
 	        		pushLog("> SYS: BW UPDATED " + bandwidth);
 	        	}
@@ -82,6 +98,7 @@ public class Server {
 		        		break;
 		        	}
 	        	}
+	        	*/
 	        }
 	        
 	        in.close();

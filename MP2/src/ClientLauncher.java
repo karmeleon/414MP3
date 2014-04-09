@@ -109,7 +109,7 @@ public class ClientLauncher extends JFrame{
 		optPanel.setPreferredSize(new Dimension(200,30));
 		mainContainer.add(optPanel);
 		
-		String[] resSettings = {"240p", "480p"};
+		String[] resSettings = {"240p", "360p", "480p", "720p"};
 		resCombo = new JComboBox<String>(resSettings);
 		resCombo.setPreferredSize(new Dimension(95,30));
 		optPanel.add(resCombo);
@@ -149,7 +149,7 @@ public class ClientLauncher extends JFrame{
 		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
 		Thread clientThread = new Thread() {
 			public void run() {
-				String settings = "" + (resCombo.getSelectedIndex() == 0 ? "240p" : "480p")
+				String settings = "" + resCombo.getSelectedItem()
 						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth;
 				Client.startClient(vc, settings, textArea);

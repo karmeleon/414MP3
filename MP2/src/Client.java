@@ -49,7 +49,7 @@ public class Client {
 			Socket skt = new Socket("localhost", 45000);
 			skt.setReuseAddress(true);
 	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+	        out = new PrintWriter(skt.getOutputStream(), true);
 	
 	        JSONObject json_settings = new JSONObject();
 	        json_settings.put("settings", settings);
@@ -66,7 +66,7 @@ public class Client {
 	        	line = s.nextLine();
 	        	json_command = new JSONObject();
 	        	json_command.put("command", line);
-	        	json_command.put("bandwidth", "");
+	        	// json_command.put("bandwidth", "");
 	        	out.println(json_command.toString());
 	        	
 	        	if(line.equals("stop"))
@@ -250,12 +250,11 @@ public class Client {
 		}
 		
 		// System.out.println("RSRC: " + bandwidth);
-		pushLog("> RSRC: REQ BW " + bandwidth);
+		
 		JSONObject json_bandwidth = new JSONObject();
-        json_bandwidth.put("bandwidth", "" + bandwidth);
-        json_bandwidth.put("command", "");
-        System.out.println(json_bandwidth.toString());
-        // out.println(json_bandwidth.toString());
+        json_bandwidth.put("command", "" + bandwidth);
+        out.println(json_bandwidth.toString());
+        pushLog("> RSRC: REQ BW " + bandwidth);
 	}
 	public static long getUnsignedInt(int x) {
 	    return x & 0x00000000ffffffffL;
