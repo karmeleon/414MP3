@@ -131,12 +131,14 @@ public class Server {
 		
 		final Bin videoBin = new Bin("VideoBin");
 		
+		Element videorate = ElementFactory.make("videorate", "rate");
+		videorate.set("force-fps", "15");
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
-		videoBin.addMany(videoenc, videopay);
-		Element.linkMany(videoenc, videopay);
-		videoBin.addPad(new GhostPad("sink", videoenc.getStaticPad("sink")));
+		videoBin.addMany(videorate, videoenc, videopay);
+		Element.linkMany(videorate, videoenc, videopay);
+		videoBin.addPad(new GhostPad("sink", videorate.getStaticPad("sink")));
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
 		pipe.add(videoBin);
 		
