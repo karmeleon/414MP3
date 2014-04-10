@@ -67,6 +67,7 @@ public class Server {
 		        // listen for commands
 		        JSONObject json_msg;
 		        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
+		        	//pb.debugToDotFile(0, "server");
 		        	String nextMsg = in.readLine();
 		        	pushLog("> SYS: GOT " + nextMsg);
 		        	
@@ -159,12 +160,14 @@ public class Server {
 		
 		final Bin audioBin = new Bin("AudioBin");
 		
+		Element audRate = ElementFactory.make("audioresample", "audiorate");
+		audRate.setCaps(Caps.fromString("audio/x-raw-int, rate=8000"));
 		Element audConv = ElementFactory.make("audioconvert", "audioconv");
         Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
         
-        audioBin.addMany(audConv, audPayload);
-        Element.linkMany(audConv, audPayload);
-        audioBin.addPad(new GhostPad("sink", audConv.getStaticPad("sink")));
+        audioBin.addMany(audRate, audConv, audPayload);
+        Element.linkMany(audRate, audConv, audPayload);
+        audioBin.addPad(new GhostPad("sink", audRate.getStaticPad("sink")));
         audioBin.addPad(new GhostPad("src", audPayload.getStaticPad("src")));
         pipe.add(audioBin);
         
