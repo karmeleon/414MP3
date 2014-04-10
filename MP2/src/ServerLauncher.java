@@ -16,6 +16,7 @@ public class ServerLauncher extends JFrame {
 	JScrollPane scrollPane;
 	JButton startButton;
 	ServerLauncher serverGUI;
+	static JPanel ctrlPanel;
 	
 	public ServerLauncher() {
 		super("Server");
@@ -29,7 +30,7 @@ public class ServerLauncher extends JFrame {
 		mainContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
 		getContentPane().add(mainContainer);
 		
-		JPanel ctrlPanel = new JPanel();
+		ctrlPanel = new JPanel();
 		ctrlPanel.setPreferredSize(new Dimension(500, 30));
 		mainContainer.add(ctrlPanel);
 		
@@ -44,6 +45,8 @@ public class ServerLauncher extends JFrame {
 					}
 				};
 				serverThread.start();
+				ctrlPanel.remove(startButton);
+				ctrlPanel.repaint();
 			}
 		});
 		ctrlPanel.add(startButton);
