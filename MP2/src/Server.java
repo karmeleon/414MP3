@@ -15,11 +15,14 @@ import org.gstreamer.Bus;
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
 import org.gstreamer.ElementFactory;
+import org.gstreamer.Format;
 import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
 import org.gstreamer.GstObject;
 import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
+import org.gstreamer.SeekFlags;
+import org.gstreamer.SeekType;
 import org.gstreamer.State;
 import org.gstreamer.Structure;
 import org.gstreamer.elements.DecodeBin2;
@@ -90,6 +93,12 @@ public class Server {
 		        	case "stop":
 		        		pb.setState(State.PAUSED);
 		        		pb.setState(State.NULL);
+		        		break;
+		        	case "ff":
+		        		pb.seek(2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
+		        		break;
+		        	case "rw":
+		        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
 		        		break;
 		        	default :
 		        		break;
