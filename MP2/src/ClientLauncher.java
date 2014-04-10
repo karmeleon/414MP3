@@ -2,6 +2,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.file.*;
 import java.util.*;
 import javax.swing.*;
@@ -93,8 +94,8 @@ public class ClientLauncher extends JFrame{
 		});
 		ctrlPanel.add(buttons.get("Play"));
 		
-		makeCtrlButton("Pause");
-		ctrlPanel.add(buttons.get("Pause"));
+		// makeCtrlButton("Pause");
+		// ctrlPanel.add(buttons.get("Pause"));
 		
 		makeCtrlButton("Stop");
 		ctrlPanel.add(buttons.get("Stop"));
@@ -146,17 +147,37 @@ public class ClientLauncher extends JFrame{
 	 * @return state of player, true = playing, false = remain paused
 	 */
 	private boolean playback() {
-		pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
-		Thread clientThread = new Thread() {
-			public void run() {
-				String settings = "" + resCombo.getSelectedItem()
-						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth;
-				Client.startClient(vc, settings, textArea);
+		if (!playing) {
+			pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
+			Thread clientThread = new Thread() {
+				public void run() {
+					String settings = "" + resCombo.getSelectedItem()
+							+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+							+ " " + bandwidth + " play";
+					try {
+						Client.handleRequest(vc, settings, textArea);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			};
+			clientThread.start();
+			return (playing = true);
+		}
+		else { // if (playing)
+			String settings = "" + resCombo.getSelectedItem()
+					+ " " + actCombo.getSelectedItem()
+					+ " " + bandwidth + " pause";
+			try {
+				Client.handleRequest(vc, settings, textArea);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		};
-		clientThread.start();
-		return playing;
+			return (playing = false);
+		}
+		
 	}
 	
 	private void scanResource() throws IOException {

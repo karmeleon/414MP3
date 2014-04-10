@@ -1,22 +1,13 @@
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Scanner;
-
-import javax.swing.JFrame;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-
 import org.gstreamer.Bin;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
@@ -31,60 +22,99 @@ import org.gstreamer.State;
 import org.gstreamer.elements.good.RTPBin;
 import org.gstreamer.swing.VideoComponent;
 import org.gstreamer.utils.GstDebugUtils;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class Client {
-
-	/**
-	 * @param args
-	 */
-	
 	static PrintWriter out;
 	static JTextArea textArea;
+	static Pipeline clientPipe;
 	
-	public static void startClient(VideoComponent vc, String settings, JTextArea log) {
+	static String resolution = "";
+	static String attribute = "";
+	static String request = "";
+	
+	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
-		try {
-			Socket skt = new Socket("localhost", 45000);
-			skt.setReuseAddress(true);
-	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        out = new PrintWriter(skt.getOutputStream(), true);
-	
-	        JSONObject json_settings = new JSONObject();
-	        json_settings.put("settings", settings);
-	        out.println(json_settings.toString());
-	        
-	        pushLog("> SYS: CNCT SUCCESS");
-	        startStreaming(vc, settings);
-	        
-	        pushLog("> CTRL: LISTENING FOR COMMANDS");
-	        Scanner s = new Scanner(System.in);
-	        String line;
-	        JSONObject json_command;
-	        while(true) {
-	        	line = s.nextLine();
-	        	json_command = new JSONObject();
-	        	json_command.put("command", line);
-	        	// json_command.put("bandwidth", "");
-	        	out.println(json_command.toString());
-	        	
-	        	if(line.equals("stop"))
-	        		break;
-	        }
-	        
-	        in.close();
-	        out.close();
-	        skt.close();
-		} catch(Exception e) {
-			e.printStackTrace();
+		
+		String[] s = settings.split(" ");
+		resolution = s[0];               // 240p/480p
+		attribute = s[1];                // Passive/Active
+		// clientbw = Integer.parseInt(s[2]); // Some amount
+		request = s[3];
+		
+		if (clientPipe == null) {
+			// Play -> connect and play
+			// Pause -> nothing
+			// Stop -> Nothing
+			if (request.equalsIgnoreCase("play")) {
+				connectAndPlay(vc, settings);
+			}
+		}
+		else {
+			// Play -> if playing then nothing || if paused then resume 
+			// Pause -> if playing then pause || if  paused then nothing
+			// Stop -> Signal kill and purge pipes
+			if (request.equalsIgnoreCase("play")) {
+				commandResume();
+			}
+			else if (request.equalsIgnoreCase("pause")) {
+				commandPause();
+			}
+			else { // request = stop
+				
+			}
 		}
 	}
+	
+	public static void commandResume() {
+		JSONObject json_pause = new JSONObject();
+		json_pause.put("command", "play");
+		out.println(json_pause.toString());
+	}
+	
+	public static void commandPause() {
+		JSONObject json_pause = new JSONObject();
+		json_pause.put("command", "pause");
+		out.println(json_pause.toString());
+	}
 
+	private static void connectAndPlay(VideoComponent vc, String settings) throws UnknownHostException, IOException {
+		Socket skt = new Socket("localhost", 45000);
+		skt.setReuseAddress(true);
+        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+        out = new PrintWriter(skt.getOutputStream(), true);
+
+        JSONObject json_settings = new JSONObject();
+        json_settings.put("settings", settings);
+        out.println(json_settings.toString());
+        
+        pushLog("> SYS: CNCT SUCCESS");
+        startStreaming(vc, settings);
+        
+        pushLog("> CTRL: LISTENING FOR COMMANDS");
+        Scanner s = new Scanner(System.in);
+        String line;
+        JSONObject json_command;
+        while(true) {
+        	line = s.nextLine();
+        	json_command = new JSONObject();
+        	json_command.put("command", line);
+        	// json_command.put("bandwidth", "");
+        	out.println(json_command.toString());
+        	
+        	if(line.equals("stop"))
+        		break;
+        }
+        
+        in.close();
+        out.close();
+        skt.close();
+	}
+	
 	private static void startStreaming(final VideoComponent vc, String settings) {
 		Gst.init();
 		final int port = 45001;
-		final Pipeline pipe = new Pipeline("pipeline");
+		clientPipe = new Pipeline("pipeline");
 		// in the real thing these'll just get sent over the control stream, but for now they're hardcoded
 		
 		
@@ -122,7 +152,7 @@ public class Client {
 		
 		System.out.println("Audio udp ports init'd");
 		
-		pipe.addMany(udpVideoSrc, udpAudioSrc, videoRtcpIn, audioRtcpIn, videoRtcpOut, audioRtcpOut);
+		clientPipe.addMany(udpVideoSrc, udpAudioSrc, videoRtcpIn, audioRtcpIn, videoRtcpOut, audioRtcpOut);
 		
 		// VIDEO BIN
 		
@@ -136,7 +166,7 @@ public class Client {
 		Element.linkMany(videoDepay, videoDecode, videoColor);
 		
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
-		pipe.add(videoBin);
+		clientPipe.add(videoBin);
 		
 		System.out.println("VideoBin init'd");
 		
@@ -151,14 +181,14 @@ public class Client {
 		Element.linkMany(audioDepay, audioSink);
 		
 		audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
-		pipe.add(audioBin);
+		clientPipe.add(audioBin);
 		
 		System.out.println("AudioBin init'd");
 		
 		// RTPBIN
 		
 		final RTPBin rtp = new RTPBin("rtp");
-		pipe.add(rtp);
+		clientPipe.add(rtp);
 		
 		Element.linkPads(udpVideoSrc, "src", rtp, "recv_rtp_sink_0");
 		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
@@ -183,19 +213,19 @@ public class Client {
 			}
 		});
 		
-		Bus bus = pipe.getBus();
+		Bus bus = clientPipe.getBus();
         
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
                 System.out.println("Error: code=" + code + " message=" + message);
              // GST_DEBUG_DUMP_DOT_DIR
-                GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "client");
+                GstDebugUtils.gstDebugBinToDotFile(clientPipe, 1, "client");
             }
         });
         bus.connect(new Bus.EOS() {
 
             public void endOfStream(GstObject source) {
-                pipe.setState(State.NULL);
+            	clientPipe.setState(State.NULL);
                 System.out.println("EOS");
                 System.exit(0);
             }
@@ -206,21 +236,7 @@ public class Client {
         
         Thread videoThread = new Thread() {
         	public void run() {
-        		/*
-				VideoComponent videoComponent = new VideoComponent();
-				Element videoSink = videoComponent.getElement();
-        		
-        		
-				// Now create a JFrame to display the video output
-				
-				JFrame frame = new JFrame("Swing Video Test");
-				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-				frame.add(videoComponent, BorderLayout.CENTER);
-				videoComponent.setPreferredSize(new Dimension(720, 576));
-				frame.pack();
-				frame.setVisible(true);
-        		*/
-				pipe.setState(org.gstreamer.State.PLAYING);
+        		clientPipe.setState(org.gstreamer.State.PLAYING);
         	}
         };
         videoThread.start();

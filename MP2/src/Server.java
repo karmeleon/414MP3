@@ -81,24 +81,6 @@ public class Server {
 	        		pushLog("> SYS: SET BW " + command);
 	        		break;
 	        	}
-	        	/*
-	        	if (bandwidth.length() != 0) {
-	        		pushLog("> SYS: BW UPDATED " + bandwidth);
-	        	}
-	        	else if (command.length() != 0) {
-	        		switch(command) {
-		        	case "play":
-		        		pb.setState(State.PLAYING);
-		        		break;
-		        	case "pause":
-		        		pb.setState(State.PAUSED);
-		        		break;
-		        	case "stop":
-		        		pb.setState(State.NULL);
-		        		break;
-		        	}
-	        	}
-	        	*/
 	        }
 	        
 	        in.close();
