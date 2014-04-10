@@ -28,6 +28,7 @@ public class Client {
 	static PrintWriter out;
 	static JTextArea textArea;
 	static Pipeline clientPipe;
+	static Bin videoBin;
 	
 	static String resolution = "";
 	static String attribute = "";
@@ -61,9 +62,23 @@ public class Client {
 				commandPause();
 			}
 			else { // request = stop
-				
+				commandStop(vc);
 			}
 		}
+	}
+	
+	public static void commandStop(VideoComponent vc) {
+		JSONObject json_pause = new JSONObject();
+		json_pause.put("command", "pause");
+		out.println(json_pause.toString());
+		/*
+		videoBin.unlink(vc.getElement());
+		videoBin.remove(vc.getElement());
+		videoBin.setState(org.gstreamer.State.NULL);
+		
+		clientPipe.setState(org.gstreamer.State.NULL);
+		clientPipe = null;
+		*/
 	}
 	
 	public static void commandResume() {
@@ -115,6 +130,8 @@ public class Client {
 		Gst.init();
 		final int port = 45001;
 		clientPipe = new Pipeline("pipeline");
+		pushLog("> CTRL: " + "PLAY");
+		pushLog("> SYS: " + " INIT STREAM");
 		// in the real thing these'll just get sent over the control stream, but for now they're hardcoded
 		
 		
@@ -156,7 +173,7 @@ public class Client {
 		
 		// VIDEO BIN
 		
-		final Bin videoBin = new Bin("videoBin");
+		videoBin = new Bin("videoBin");
 		
 		final Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
 		final Element videoDecode = ElementFactory.make("jpegdec", "decode");

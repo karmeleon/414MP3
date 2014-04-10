@@ -89,7 +89,7 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				boolean status = playback();
 				buttons.get("Play").setText(status ? "Pause" : "Play");
-				pushLog("> CTRL: " + (status ? "PLAY" : "PAUSE"));
+				// pushLog("> CTRL: " + (status ? "PLAY" : "PAUSE"));
 			}
 		});
 		ctrlPanel.add(buttons.get("Play"));
@@ -103,6 +103,17 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				clearLog();
 				pushLog("> CTRL: STOP");
+				String settings = "" + resCombo.getSelectedItem()
+						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " stop";
+				try {
+					Client.handleRequest(vc, settings, textArea);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				playing = false;
+				buttons.get("Play").setText("Play");
 			}
 		});
 		

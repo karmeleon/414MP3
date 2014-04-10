@@ -34,6 +34,7 @@ public class Server {
 	/**
 	 * @param args
 	 */
+	static PrintWriter out;
 	static int clientbw = 0;
 	static boolean closeResourceInfoStream = true;
 	static JTextArea textArea = null;
@@ -41,62 +42,72 @@ public class Server {
 	public static void startServer(JTextArea log) {
 		textArea = log;
 		// System.out.println("Starting testserver on port 45000...");
-		try {
-			ServerSocket srvr = new ServerSocket(45000);
-			srvr.setReuseAddress(true);
-	        Socket skt = srvr.accept();
-	        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
-	        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
-	        
-	        
-	        JSONObject json_settings = new JSONObject(in.readLine());
-	        String settings = json_settings.getString("settings");
-	        pushLog("> SYS: REQ " + settings);
-	        
-	        Pipeline pb = startStreaming(settings);
-	        
-	        // listen for commands
-	        JSONObject json_msg;
-	        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
-	        	String nextMsg = in.readLine();
-	        	pushLog("> SYS: GOT " + nextMsg);
-	        	
-	        	json_msg = new JSONObject(nextMsg);
-	        	String command = json_msg.getString("command");
-	        	
-	        	try {
-	        		// int fps = json_msg.getInt("fps");
-	        		int fps = Integer.parseInt(command);
-	        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
-	        		videoBin.getElementByName("rate").set("force-fps", "" + fps);
-	        		pushLog("> SYS: SET BW " + command);
-	        	} catch(Exception e) {
-	        		// this isn't an fps command, ignore it here
-	        	}
-	        	
-	        	
-	        	switch(command) {
-	        	case "play":
-	        		pb.setState(State.PLAYING);
-	        		break;
-	        	case "pause":
-	        		pb.setState(State.PAUSED);
-	        		break;
-	        	case "stop":
-	        		pb.setState(State.NULL);
-	        		break;
-	        	default :
-	        		break;
-	        	}
-	        }
-	        
-	        in.close();
-	        out.close();
-	        skt.close();
-	        srvr.close();
-		} catch(Exception e) {
-			e.printStackTrace();
+		while(true) {
+			try {
+				log.setText("");
+				pushLog("> CTRL: Starting Server ...");
+				ServerSocket srvr = new ServerSocket(45000);
+				srvr.setReuseAddress(true);
+		        Socket skt = srvr.accept();
+		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
+		        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+		        out = new PrintWriter(skt.getOutputStream(), true);
+		        
+		        
+		        JSONObject json_settings = new JSONObject(in.readLine());
+		        String settings = json_settings.getString("settings");
+		        pushLog("> SYS: REQ " + settings);
+		        
+		        Pipeline pb = startStreaming(settings);
+		        
+		        // listen for commands
+		        JSONObject json_msg;
+		        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
+		        	String nextMsg = in.readLine();
+		        	pushLog("> SYS: GOT " + nextMsg);
+		        	
+		        	json_msg = new JSONObject(nextMsg);
+		        	String command = json_msg.getString("command");
+		        	
+		        	try {
+		        		// int fps = json_msg.getInt("fps");
+		        		int fps = Integer.parseInt(command);
+		        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
+		        		videoBin.getElementByName("rate").set("force-fps", "" + fps);
+		        		pushLog("> SYS: SET BW " + command);
+		        	} catch(Exception e) {
+		        		// this isn't an fps command, ignore it here
+		        	}
+		        	
+		        	
+		        	switch(command) {
+		        	case "play":
+		        		pb.setState(State.PLAYING);
+		        		break;
+		        	case "pause":
+		        		pb.setState(State.PAUSED);
+		        		break;
+		        	case "stop":
+		        		pb.setState(State.PAUSED);
+		        		/*
+		        		JSONObject json_kill = new JSONObject();
+		        		json_kill.put("kill", "the client pipes");
+		        		out.println(json_kill.toString());
+		        		*/
+		        		// pb.setState(State.NULL);
+		        		break;
+		        	default :
+		        		break;
+		        	}
+		        }
+		        
+		        in.close();
+		        out.close();
+		        skt.close();
+		        srvr.close();
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
