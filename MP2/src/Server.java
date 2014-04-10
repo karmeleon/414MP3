@@ -63,7 +63,14 @@ public class Server {
 	        	pushLog("> SYS: GOT " + nextMsg);
 	        	
 	        	json_msg = new JSONObject(nextMsg);
-	        	String command = json_msg.getString("command");
+	        	
+	        	try {
+	        		int fps = json_msg.getInt("fps");
+	        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
+	        		videoBin.getElementByName("rate").set("force-fps", "" + fps);
+	        	} catch(Exception e) {
+	        		// this isn't an fps command, ignore it here
+	        	}
 	        	// String command = json_msg.getString("command");
 	        	// String bandwidth = json_msg.getString("bandwidth");
 	        	
@@ -114,7 +121,7 @@ public class Server {
 		final Bin videoBin = new Bin("VideoBin");
 		
 		Element videorate = ElementFactory.make("videorate", "rate");
-		videorate.set("force-fps", "15");
+		//videorate.set("force-fps", "15");
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
