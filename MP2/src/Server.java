@@ -63,16 +63,18 @@ public class Server {
 	        	pushLog("> SYS: GOT " + nextMsg);
 	        	
 	        	json_msg = new JSONObject(nextMsg);
+	        	String command = json_msg.getString("command");
 	        	
 	        	try {
-	        		int fps = json_msg.getInt("fps");
+	        		// int fps = json_msg.getInt("fps");
+	        		int fps = Integer.parseInt(command);
 	        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
 	        		videoBin.getElementByName("rate").set("force-fps", "" + fps);
+	        		pushLog("> SYS: SET BW " + command);
 	        	} catch(Exception e) {
 	        		// this isn't an fps command, ignore it here
 	        	}
-	        	// String command = json_msg.getString("command");
-	        	// String bandwidth = json_msg.getString("bandwidth");
+	        	
 	        	
 	        	switch(command) {
 	        	case "play":
@@ -85,7 +87,6 @@ public class Server {
 	        		pb.setState(State.NULL);
 	        		break;
 	        	default :
-	        		pushLog("> SYS: SET BW " + command);
 	        		break;
 	        	}
 	        }
@@ -121,7 +122,10 @@ public class Server {
 		final Bin videoBin = new Bin("VideoBin");
 		
 		Element videorate = ElementFactory.make("videorate", "rate");
-		//videorate.set("force-fps", "15");
+		
+		/** asdf set fps here **/
+		videorate.set("force-fps", "" + clientbw);
+		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
