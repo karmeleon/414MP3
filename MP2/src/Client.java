@@ -243,34 +243,34 @@ public class Client {
 	}
 	
 	public static void updateResource() {
-		int bandwidth = 0;
-		BufferedReader br = null;
-		try {
-			br = new BufferedReader(new FileReader("resource.txt"));
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+		if (clientPipe != null) {
+			int bandwidth = 0;
+			BufferedReader br = null;
+			try {
+				br = new BufferedReader(new FileReader("resource.txt"));
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			try {
+				bandwidth = Integer.parseInt(br.readLine());
+			} catch (NumberFormatException e) {
+				// pushLog("> RSRC: BAD VALUE");
+			} catch (IOException e) {
+				// pushLog("> RSRC: BAD VALUE");
+			}
+			try {
+				br.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			JSONObject json_bandwidth = new JSONObject();
+	        json_bandwidth.put("command", "" + bandwidth);
+	        out.println(json_bandwidth.toString());
+	        pushLog("> RSRC: REQ BW " + bandwidth);
 		}
-		try {
-			bandwidth = Integer.parseInt(br.readLine());
-		} catch (NumberFormatException e) {
-			// pushLog("> RSRC: BAD VALUE");
-		} catch (IOException e) {
-			// pushLog("> RSRC: BAD VALUE");
-		}
-		try {
-			br.close();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		// System.out.println("RSRC: " + bandwidth);
-		
-		JSONObject json_bandwidth = new JSONObject();
-        json_bandwidth.put("command", "" + bandwidth);
-        out.println(json_bandwidth.toString());
-        pushLog("> RSRC: REQ BW " + bandwidth);
 	}
 	public static long getUnsignedInt(int x) {
 	    return x & 0x00000000ffffffffL;
