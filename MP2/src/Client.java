@@ -63,22 +63,29 @@ public class Client {
 			}
 			else { // request = stop
 				commandStop(vc);
+				System.out.println("HERE");
 			}
 		}
 	}
 	
 	public static void commandStop(VideoComponent vc) {
-		JSONObject json_pause = new JSONObject();
-		json_pause.put("command", "pause");
-		out.println(json_pause.toString());
-		/*
+		// System.out.println("HERE");
+		commandPause();
+		
+		clientPipe.setState(State.PAUSED);
+		videoBin.setState(State.PAUSED);
+		// System.out.println("HERE");
 		videoBin.unlink(vc.getElement());
 		videoBin.remove(vc.getElement());
-		videoBin.setState(org.gstreamer.State.NULL);
-		
-		clientPipe.setState(org.gstreamer.State.NULL);
+		// videoBin.setState(org.gstreamer.State.NULL);
+		// System.out.println("HERE");
+		// clientPipe.setState(org.gstreamer.State.NULL);
+		// System.out.println("HERE");
 		clientPipe = null;
-		*/
+		// System.out.println("HERE");
+		JSONObject json_pause = new JSONObject();
+		json_pause.put("command", "stop");
+		out.println(json_pause.toString());
 	}
 	
 	public static void commandResume() {

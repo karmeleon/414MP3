@@ -89,12 +89,7 @@ public class Server {
 		        		break;
 		        	case "stop":
 		        		pb.setState(State.PAUSED);
-		        		/*
-		        		JSONObject json_kill = new JSONObject();
-		        		json_kill.put("kill", "the client pipes");
-		        		out.println(json_kill.toString());
-		        		*/
-		        		// pb.setState(State.NULL);
+		        		pb.setState(State.NULL);
 		        		break;
 		        	default :
 		        		break;
