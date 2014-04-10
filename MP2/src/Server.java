@@ -41,6 +41,7 @@ public class Server {
 	static int clientbw = 0;
 	static boolean closeResourceInfoStream = true;
 	static JTextArea textArea = null;
+	static boolean seeking = false;
 	
 	public static void startServer(JTextArea log) {
 		textArea = log;
@@ -85,6 +86,10 @@ public class Server {
 		        	
 		        	switch(command) {
 		        	case "play":
+		        		if (seeking) {
+		        			seeking = false;
+		        			pb.seek(1.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
+		        		}
 		        		pb.setState(State.PLAYING);
 		        		break;
 		        	case "pause":
@@ -95,9 +100,11 @@ public class Server {
 		        		pb.setState(State.NULL);
 		        		break;
 		        	case "ff":
+		        		seeking = true;
 		        		pb.seek(2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
 		        		break;
 		        	case "rw":
+		        		seeking = true;
 		        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
 		        		break;
 		        	default :

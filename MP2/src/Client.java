@@ -33,6 +33,7 @@ public class Client {
 	static String resolution = "";
 	static String attribute = "";
 	static String request = "";
+	// static boolean seeking = false;
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
@@ -61,6 +62,12 @@ public class Client {
 			else if (request.equalsIgnoreCase("pause")) {
 				commandPause();
 			}
+			else if (request.equalsIgnoreCase("rewind")) {
+				commandRewind();
+			}
+			else if (request.equalsIgnoreCase("forward" )) {
+				commandForward();
+			}
 			else { // request = stop
 				commandStop(vc);
 				System.out.println("HERE");
@@ -68,21 +75,27 @@ public class Client {
 		}
 	}
 	
+	public static void commandForward() {
+		JSONObject json_pause = new JSONObject();
+		json_pause.put("command", "ff");
+		out.println(json_pause.toString());
+	}
+	
+	public static void commandRewind() {
+		JSONObject json_pause = new JSONObject();
+		json_pause.put("command", "rw");
+		out.println(json_pause.toString());
+	}
+	
 	public static void commandStop(VideoComponent vc) {
-		// System.out.println("HERE");
 		commandPause();
 		
 		clientPipe.setState(State.PAUSED);
 		videoBin.setState(State.PAUSED);
-		// System.out.println("HERE");
 		videoBin.unlink(vc.getElement());
 		videoBin.remove(vc.getElement());
-		// videoBin.setState(org.gstreamer.State.NULL);
-		// System.out.println("HERE");
-		// clientPipe.setState(org.gstreamer.State.NULL);
-		// System.out.println("HERE");
+
 		clientPipe = null;
-		// System.out.println("HERE");
 		JSONObject json_pause = new JSONObject();
 		json_pause.put("command", "stop");
 		out.println(json_pause.toString());

@@ -81,8 +81,35 @@ public class ClientLauncher extends JFrame{
 
 		makeCtrlButton("FF");
 		ctrlPanel.add(buttons.get("FF"));
+		buttons.get("FF").addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String settings = "" + resCombo.getSelectedItem()
+						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " forward";
+				try {
+					Client.handleRequest(vc, settings, textArea);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+		
 		makeCtrlButton("RW");
 		ctrlPanel.add(buttons.get("RW"));
+		buttons.get("RW").addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String settings = "" + resCombo.getSelectedItem()
+						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " rewind";
+				try {
+					Client.handleRequest(vc, settings, textArea);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
 		
 		makeCtrlButton("Play");
 		buttons.get("Play").addActionListener(new ActionListener() {
