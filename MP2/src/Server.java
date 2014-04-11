@@ -1,5 +1,7 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -42,11 +44,12 @@ public class Server {
 	static boolean closeResourceInfoStream = true;
 	static JTextArea textArea = null;
 	static boolean seeking = false;
+	static int serverbw = 0;
 	
 	public static void startServer(JTextArea log) {
 		textArea = log;
-		// System.out.println("Starting testserver on port 45000...");
-		while(true) {
+		updateResource();
+		while(true) { // y = 2.4 * x + 240
 			try {
 				log.setText("");
 				pushLog("> CTRL: Starting Server ...");
@@ -56,7 +59,6 @@ public class Server {
 		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
 		        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 		        out = new PrintWriter(skt.getOutputStream(), true);
-		        
 		        
 		        JSONObject json_settings = new JSONObject(in.readLine());
 		        String settings = json_settings.getString("settings");
@@ -83,7 +85,6 @@ public class Server {
 		        	} catch(Exception e) {
 		        		// this isn't an fps command, ignore it here
 		        	}
-		        	
 		        	
 		        	switch(command) {
 		        	case "play":
@@ -125,14 +126,12 @@ public class Server {
 	
 	@SuppressWarnings("deprecation")
 	private static Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
-		// boolean closeResourceInfoStream = false;
 		String[] s = settings.split(" ");
-		String resolution = s[0];               // 240p/480p
-		final String attribute = s[1];                // Passive/Active
+		String resolution = s[0];          // 240p/480p
+		final String attribute = s[1];     // Passive/Active
 		clientbw = Integer.parseInt(s[2]); // Some amount
 		
 		final int port = 45001;
-		// create the pipeline here
 		Gst.init();
 		
 		final Pipeline pipe = new Pipeline();
@@ -150,6 +149,9 @@ public class Server {
 		videorate.set("force-fps", "" + clientbw);
 		if(attribute.equalsIgnoreCase("passive")) {
 			videorate.set("force-fps", "10");
+		}
+		else {
+			negotiate(videorate, resolution, clientbw, serverbw);
 		}
 		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
@@ -268,6 +270,54 @@ public class Server {
         return pipe;
 	}
 	
+	public static void negotiate(Element videorate, String restr, int cbw, int sbw) {
+		// kilobits per second
+		// 720 - 1000 kbps -> 30fps
+		// 480 - 750 kbps -> 30fps
+		// 360 - 500 kbps -> 30fps
+		// 240 -  250 kbps -> 30fps
+		double cap = 30;
+		int res = Integer.parseInt(restr.substring(0, 3));
+		if (res == 720) videorate.set("force-fps", "" 
+				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 1000.0))));
+		if (res == 480) videorate.set("force-fps", "" 
+				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 750.0))));
+		if (res == 360) videorate.set("force-fps", "" 
+				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 500.0))));
+		if (res == 240) videorate.set("force-fps", "" 
+				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 250.0))));
+	}
+	
+	public static void updateResource() {
+		int bandwidth = 0;
+		BufferedReader br = null;
+		try {
+			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+			String appPath = "";
+			if (somePath.indexOf('!') != -1) { // for jar files
+				appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
+			}
+			else { // running on eclipse
+				appPath = ""; // just use the local resource.txt
+			}
+			br = new BufferedReader(new FileReader(appPath + "resource.txt"));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		try {
+			bandwidth = Integer.parseInt(br.readLine());
+		} catch (NumberFormatException e) {
+		} catch (IOException e) {
+		}
+		try {
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		serverbw = bandwidth;
+        if (textArea != null) pushLog("> RSRC: SET BW " + bandwidth);
+	}
 	public static void pushLog(String line) {
 		textArea.setText(textArea.getText() + line + "\n");
 	}

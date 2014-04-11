@@ -12,7 +12,7 @@ public class ServerLauncher extends JFrame {
 	
 	String currpath;
 	String logtext = "";
-	JTextArea textArea;
+	JTextArea textArea = null;
 	JScrollPane scrollPane;
 	JButton startButton;
 	ServerLauncher serverGUI;
@@ -34,9 +34,17 @@ public class ServerLauncher extends JFrame {
 		ctrlPanel.setPreferredSize(new Dimension(500, 30));
 		mainContainer.add(ctrlPanel);
 		
+		JButton rsrcButton = new JButton("Refresh");
+		rsrcButton.setMargin(new Insets(0,0,0,0));
+		rsrcButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Server.updateResource();
+			}
+		});
+		ctrlPanel.add(rsrcButton);
+		
 		startButton = new JButton("Start");
 		startButton.setMargin(new Insets(0,0,0,0));
-		
 		startButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Thread serverThread = new Thread() {

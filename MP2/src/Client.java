@@ -294,24 +294,25 @@ public class Client {
 			BufferedReader br = null;
 			try {
 				String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-				int pathidx = somePath.indexOf("414MP2");
-				String appPath = somePath.substring(0, pathidx);
+				String appPath = "";
+				if (somePath.indexOf('!') != -1) { // for jar files
+					appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
+				}
+				else { // running on eclipse
+					appPath = ""; // just use the local resource.txt
+				}
 				br = new BufferedReader(new FileReader(appPath + "resource.txt"));
 			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 			try {
 				bandwidth = Integer.parseInt(br.readLine());
 			} catch (NumberFormatException e) {
-				// pushLog("> RSRC: BAD VALUE");
 			} catch (IOException e) {
-				// pushLog("> RSRC: BAD VALUE");
 			}
 			try {
 				br.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			

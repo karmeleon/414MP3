@@ -215,8 +215,13 @@ public class ClientLauncher extends JFrame{
 	
 	private void scanResource() throws IOException {
 		String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-		int pathidx = somePath.indexOf("414MP2");
-		String appPath = somePath.substring(0, pathidx);
+		String appPath = "";
+		if (somePath.indexOf('!') != -1) { // for jar files
+			appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
+		}
+		else { // running on eclipse
+			appPath = ""; // just use the local resource.txt
+		}
 		BufferedReader br = new BufferedReader(new FileReader(appPath + "resource.txt"));
 		try {
 			bandwidth = Integer.parseInt(br.readLine());
