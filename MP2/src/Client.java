@@ -173,23 +173,28 @@ public class Client {
 		
 		System.out.println("Video udp ports init'd");
 		
-		// AUDIO
-		Element udpAudioSrc = ElementFactory.make("udpsrc", "src2");
-		udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-		udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
+		Element udpAudioSrc = null, audioRtcpIn = null, audioRtcpOut = null;
 		
-		Element audioRtcpIn = ElementFactory.make("udpsrc", "src4");
-		audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
+		if(attribute.equalsIgnoreCase("active")) {
+			// AUDIO
+			udpAudioSrc = ElementFactory.make("udpsrc", "src2");
+			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+			udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
+			
+			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
+			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
+			
+			audioRtcpOut = ElementFactory.make("udpsink", "snk2");
+			audioRtcpOut.set("host", "127.0.0.1");
+			audioRtcpOut.set("port", "" + (port + 7));
+			audioRtcpOut.set("sync", "false");
+			audioRtcpOut.set("async", "false");
+			
+			System.out.println("Audio udp ports init'd");
+			clientPipe.addMany(udpAudioSrc, audioRtcpIn, audioRtcpOut);
+		}
 		
-		Element audioRtcpOut = ElementFactory.make("udpsink", "snk2");
-		audioRtcpOut.set("host", "127.0.0.1");
-		audioRtcpOut.set("port", "" + (port + 7));
-		audioRtcpOut.set("sync", "false");
-		audioRtcpOut.set("async", "false");
-		
-		System.out.println("Audio udp ports init'd");
-		
-		clientPipe.addMany(udpVideoSrc, udpAudioSrc, videoRtcpIn, audioRtcpIn, videoRtcpOut, audioRtcpOut);
+		clientPipe.addMany(udpVideoSrc, videoRtcpIn, videoRtcpOut);
 		
 		// VIDEO BIN
 		
@@ -207,21 +212,23 @@ public class Client {
 		
 		System.out.println("VideoBin init'd");
 		
-		// AUDIO BIN
-		
 		final Bin audioBin = new Bin("audioBin");
 		
-		final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
-		final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
-		
-		audioBin.addMany(audioDepay, audioSink);
-		Element.linkMany(audioDepay, audioSink);
-		
-		audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
-		clientPipe.add(audioBin);
-		
-		System.out.println("AudioBin init'd");
-		
+		if(attribute.equalsIgnoreCase("active")) {
+			// AUDIO BIN
+			
+			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
+			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
+			
+			audioBin.addMany(audioDepay, audioSink);
+			Element.linkMany(audioDepay, audioSink);
+			
+			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
+			clientPipe.add(audioBin);
+			
+			System.out.println("AudioBin init'd");
+		}
+
 		// RTPBIN
 		
 		final RTPBin rtp = new RTPBin("rtp");
@@ -231,9 +238,11 @@ public class Client {
 		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
 		Element.linkPads(rtp, "send_rtcp_src_0", videoRtcpOut, "sink");
 		
-		Element.linkPads(udpAudioSrc, "src", rtp, "recv_rtp_sink_1");
-		Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
-		Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
+		if(attribute.equalsIgnoreCase("active")) {
+			Element.linkPads(udpAudioSrc, "src", rtp, "recv_rtp_sink_1");
+			Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
+			Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
+		}
 		
 		// BUS
 		
@@ -243,7 +252,7 @@ public class Client {
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
 					System.out.println("found video pad, trying to link to pad " + arg1.getName());
 	                System.out.println(arg1.link(videoBin.getStaticPad("sink")));
-				} else if(arg1.getName().startsWith("recv_rtp_src_1")) {
+				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
 					System.out.println("found audio pad, trying to link to pad " + arg1.getName());
 					System.out.println(arg1.link(audioBin.getStaticPad("sink")));
 				}
