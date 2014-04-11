@@ -128,7 +128,7 @@ public class Server {
 		// boolean closeResourceInfoStream = false;
 		String[] s = settings.split(" ");
 		String resolution = s[0];               // 240p/480p
-		String attribute = s[1];                // Passive/Active
+		final String attribute = s[1];                // Passive/Active
 		clientbw = Integer.parseInt(s[2]); // Some amount
 		
 		final int port = 45001;
@@ -148,6 +148,9 @@ public class Server {
 		
 		/** asdf set fps here **/
 		videorate.set("force-fps", "" + clientbw);
+		if(attribute.equalsIgnoreCase("passive")) {
+			videorate.set("force-fps", "10");
+		}
 		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
@@ -160,17 +163,18 @@ public class Server {
 		
 		final Bin audioBin = new Bin("AudioBin");
 		
-		Element audRate = ElementFactory.make("audioresample", "audiorate");
-		audRate.setCaps(Caps.fromString("audio/x-raw-int, rate=8000"));
-		Element audConv = ElementFactory.make("audioconvert", "audioconv");
-        Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
-        
-        audioBin.addMany(audRate, audConv, audPayload);
-        Element.linkMany(audRate, audConv, audPayload);
-        audioBin.addPad(new GhostPad("sink", audRate.getStaticPad("sink")));
-        audioBin.addPad(new GhostPad("src", audPayload.getStaticPad("src")));
-        pipe.add(audioBin);
-        
+		if(attribute.equalsIgnoreCase("active")) {
+			Element audRate = ElementFactory.make("audioresample", "audiorate");
+			audRate.setCaps(Caps.fromString("audio/x-raw-int, rate=8000"));
+			Element audConv = ElementFactory.make("audioconvert", "audioconv");
+	        Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
+	        
+	        audioBin.addMany(audRate, audConv, audPayload);
+	        Element.linkMany(audRate, audConv, audPayload);
+	        audioBin.addPad(new GhostPad("sink", audRate.getStaticPad("sink")));
+	        audioBin.addPad(new GhostPad("src", audPayload.getStaticPad("src")));
+	        pipe.add(audioBin);
+		}
         decode.connect(new DecodeBin2.NEW_DECODED_PAD() {
 			
 			@Override
@@ -181,11 +185,9 @@ public class Server {
 				
 				Caps caps = pad.getCaps();
 				Structure struct = caps.getStructure(0);
-				if(struct.getName().startsWith("audio/")) {
+				if(struct.getName().startsWith("audio/") && attribute.equalsIgnoreCase("active")) {
 					System.out.println("Linking audio pad: " + struct.getName());
 					pad.link(audioBin.getStaticPad("sink"));
-					// GST_DEBUG_DUMP_DOT_DIR
-			        //GstDebugUtils.gstDebugBinToDotFile(pipe, 1, "server"); THIS PIPELINE IS CORRECT
 				} else if(struct.getName().startsWith("video/")) {
 					System.out.println("Linking video pad: " + struct.getName());
 					pad.link(videoBin.getStaticPad("sink"));
@@ -216,30 +218,33 @@ public class Server {
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "videortcpin");
 		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 5));
 		
-		Element audioDataOut = ElementFactory.make("udpsink", "audiodatout");
-		audioDataOut.set("host", "127.0.0.1");
-		audioDataOut.set("port", "" + (port + 2));
-		
-		Element audioRtcpOut = ElementFactory.make("udpsink", "audiortcpout");
-		audioRtcpOut.set("host", "127.0.0.1");
-		audioRtcpOut.set("port", "" + (port + 3));
-		audioRtcpOut.set("sync", "false");
-		audioRtcpOut.set("async", "false");
-		
-		Element audioRtcpIn = ElementFactory.make("udpsrc", "audiortcpin");
-		audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 7));
-		
-		pipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn, audioDataOut, audioRtcpOut, audioRtcpIn);
+		pipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn);
 		
 		Element.linkPads(videoBin, "src", rtp, "send_rtp_sink_0");
 		Element.linkPads(rtp, "send_rtp_src_0", videoDataOut, "sink");
 		Element.linkPads(rtp, "send_rtcp_src_0", videoRtcpOut, "sink");
 		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
 		
-		Element.linkPads(audioBin, "src", rtp, "send_rtp_sink_1");
-		Element.linkPads(rtp, "send_rtp_src_1", audioDataOut, "sink");
-		Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
-		Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
+		if(attribute.equalsIgnoreCase("active")) {
+			Element audioDataOut = ElementFactory.make("udpsink", "audiodatout");
+			audioDataOut.set("host", "127.0.0.1");
+			audioDataOut.set("port", "" + (port + 2));
+			
+			Element audioRtcpOut = ElementFactory.make("udpsink", "audiortcpout");
+			audioRtcpOut.set("host", "127.0.0.1");
+			audioRtcpOut.set("port", "" + (port + 3));
+			audioRtcpOut.set("sync", "false");
+			audioRtcpOut.set("async", "false");
+			
+			Element audioRtcpIn = ElementFactory.make("udpsrc", "audiortcpin");
+			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 7));
+			pipe.addMany(audioDataOut, audioRtcpOut, audioRtcpIn);
+			
+			Element.linkPads(audioBin, "src", rtp, "send_rtp_sink_1");
+			Element.linkPads(rtp, "send_rtp_src_1", audioDataOut, "sink");
+			Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
+			Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
+		}
 		
 		Bus bus = pipe.getBus();
         
