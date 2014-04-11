@@ -7,5 +7,6 @@ MP2/bin/basic
 .metadata/
 MP2/.DS_Store
 .DS_Store
+MP2/src/Server.java.orig
 
 >>>>>>> master

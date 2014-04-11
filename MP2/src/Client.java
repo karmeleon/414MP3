@@ -284,7 +284,10 @@ public class Client {
 			int bandwidth = 0;
 			BufferedReader br = null;
 			try {
-				br = new BufferedReader(new FileReader("resource.txt"));
+				String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+				int pathidx = somePath.indexOf("414MP2");
+				String appPath = somePath.substring(0, pathidx);
+				br = new BufferedReader(new FileReader(appPath + "resource.txt"));
 			} catch (FileNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();

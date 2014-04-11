@@ -105,7 +105,6 @@ public class ClientLauncher extends JFrame{
 				try {
 					Client.handleRequest(vc, settings, textArea);
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 			}
@@ -116,13 +115,9 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent e) {
 				boolean status = playback();
 				buttons.get("Play").setText(status ? "Pause" : "Play");
-				// pushLog("> CTRL: " + (status ? "PLAY" : "PAUSE"));
 			}
 		});
 		ctrlPanel.add(buttons.get("Play"));
-		
-		// makeCtrlButton("Pause");
-		// ctrlPanel.add(buttons.get("Pause"));
 		
 		makeCtrlButton("Stop");
 		ctrlPanel.add(buttons.get("Stop"));
@@ -219,7 +214,10 @@ public class ClientLauncher extends JFrame{
 	}
 	
 	private void scanResource() throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader("resource.txt"));
+		String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+		int pathidx = somePath.indexOf("414MP2");
+		String appPath = somePath.substring(0, pathidx);
+		BufferedReader br = new BufferedReader(new FileReader(appPath + "resource.txt"));
 		try {
 			bandwidth = Integer.parseInt(br.readLine());
 		} catch (NumberFormatException e) {
