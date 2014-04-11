@@ -45,6 +45,8 @@ public class Server {
 	static JTextArea textArea = null;
 	static boolean seeking = false;
 	static int serverbw = 0;
+	static String resolution = "";
+	static Pipeline serverPipe = null;
 	
 	public static void startServer(JTextArea log) {
 		textArea = log;
@@ -77,11 +79,9 @@ public class Server {
 		        	String command = json_msg.getString("command");
 		        	
 		        	try {
-		        		// int fps = json_msg.getInt("fps");
-		        		int fps = Integer.parseInt(command);
+		        		clientbw = Integer.parseInt(command);
 		        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
-		        		videoBin.getElementByName("rate").set("force-fps", "" + fps);
-		        		pushLog("> SYS: SET BW " + command);
+		        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
 		        	} catch(Exception e) {
 		        		// this isn't an fps command, ignore it here
 		        	}
@@ -127,14 +127,14 @@ public class Server {
 	@SuppressWarnings("deprecation")
 	private static Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
 		String[] s = settings.split(" ");
-		String resolution = s[0];          // 240p/480p
+		resolution = s[0];          // 240p/480p
 		final String attribute = s[1];     // Passive/Active
 		clientbw = Integer.parseInt(s[2]); // Some amount
 		
 		final int port = 45001;
 		Gst.init();
 		
-		final Pipeline pipe = new Pipeline();
+		serverPipe = new Pipeline();
 		
 		Element filesrc = ElementFactory.make("filesrc", "src");
 		filesrc.set("location", "videos/" + resolution + ".mp4");
@@ -151,7 +151,7 @@ public class Server {
 			videorate.set("force-fps", "10");
 		}
 		else {
-			negotiate(videorate, resolution, clientbw, serverbw);
+			negotiate(videorate, clientbw, serverbw);
 		}
 		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
@@ -161,7 +161,7 @@ public class Server {
 		Element.linkMany(videorate, videoenc, videopay);
 		videoBin.addPad(new GhostPad("sink", videorate.getStaticPad("sink")));
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
-		pipe.add(videoBin);
+		serverPipe.add(videoBin);
 		
 		final Bin audioBin = new Bin("AudioBin");
 		
@@ -175,7 +175,7 @@ public class Server {
 	        Element.linkMany(audRate, audConv, audPayload);
 	        audioBin.addPad(new GhostPad("sink", audRate.getStaticPad("sink")));
 	        audioBin.addPad(new GhostPad("src", audPayload.getStaticPad("src")));
-	        pipe.add(audioBin);
+	        serverPipe.add(audioBin);
 		}
         decode.connect(new DecodeBin2.NEW_DECODED_PAD() {
 			
@@ -199,12 +199,12 @@ public class Server {
 			}
 		});
 		
-		pipe.addMany(filesrc, decode);
+        serverPipe.addMany(filesrc, decode);
 		Element.linkMany(filesrc, decode);
 		
 		// https://github.com/ClementNotin/gstreamer-rtp-experiments/blob/master/src/main/java/RoomSender.java
 		RTPBin rtp = new RTPBin("rtp");
-		pipe.add(rtp);
+		serverPipe.add(rtp);
 		
 		// UDP ELEMENTS
 		Element videoDataOut = ElementFactory.make("udpsink", "videodatout");
@@ -220,7 +220,7 @@ public class Server {
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "videortcpin");
 		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 5));
 		
-		pipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn);
+		serverPipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn);
 		
 		Element.linkPads(videoBin, "src", rtp, "send_rtp_sink_0");
 		Element.linkPads(rtp, "send_rtp_src_0", videoDataOut, "sink");
@@ -240,7 +240,7 @@ public class Server {
 			
 			Element audioRtcpIn = ElementFactory.make("udpsrc", "audiortcpin");
 			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 7));
-			pipe.addMany(audioDataOut, audioRtcpOut, audioRtcpIn);
+			serverPipe.addMany(audioDataOut, audioRtcpOut, audioRtcpIn);
 			
 			Element.linkPads(audioBin, "src", rtp, "send_rtp_sink_1");
 			Element.linkPads(rtp, "send_rtp_src_1", audioDataOut, "sink");
@@ -248,7 +248,7 @@ public class Server {
 			Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
 		}
 		
-		Bus bus = pipe.getBus();
+		Bus bus = serverPipe.getBus();
         
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
@@ -258,34 +258,37 @@ public class Server {
         bus.connect(new Bus.EOS() {
 
             public void endOfStream(GstObject source) {
-                pipe.setState(State.NULL);
+            	serverPipe.setState(State.NULL);
                 System.out.println("EOS");
                 System.exit(0);
             }
 
         });
         
-		pipe.play();
+        serverPipe.play();
         //Gst.main();
-        return pipe;
+        return serverPipe;
 	}
 	
-	public static void negotiate(Element videorate, String restr, int cbw, int sbw) {
+	public static void negotiate(Element videorate,  int cbw, int sbw) {
 		// kilobits per second
 		// 720 - 1000 kbps -> 30fps
 		// 480 - 750 kbps -> 30fps
 		// 360 - 500 kbps -> 30fps
 		// 240 -  250 kbps -> 30fps
 		double cap = 30;
-		int res = Integer.parseInt(restr.substring(0, 3));
-		if (res == 720) videorate.set("force-fps", "" 
-				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 1000.0))));
-		if (res == 480) videorate.set("force-fps", "" 
-				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 750.0))));
-		if (res == 360) videorate.set("force-fps", "" 
-				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 500.0))));
-		if (res == 240) videorate.set("force-fps", "" 
-				+ Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 250.0))));
+		int res = Integer.parseInt(resolution.substring(0, 3));
+		int setfps = 0;
+		if (res == 720)
+			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 1000.0)));
+		if (res == 480)
+			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 750.0)));
+		if (res == 360)
+			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 500.0)));
+		if (res == 240)
+			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 250.0)));
+		videorate.set("force-fps", "" + setfps);
+		if (textArea != null) pushLog("> SYS: NEGT FPS " + setfps);
 	}
 	
 	public static void updateResource() {
@@ -317,6 +320,13 @@ public class Server {
 		
 		serverbw = bandwidth;
         if (textArea != null) pushLog("> RSRC: SET BW " + bandwidth);
+        
+        if (serverPipe != null) {
+        	if (serverPipe.getState() != State.NULL) {
+        		Bin videoBin = (Bin) serverPipe.getElementByName("VideoBin");
+        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
+        	}
+        }
 	}
 	public static void pushLog(String line) {
 		textArea.setText(textArea.getText() + line + "\n");
