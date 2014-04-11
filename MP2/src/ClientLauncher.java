@@ -48,6 +48,11 @@ public class ClientLauncher extends JFrame{
 		// mainContainer.setBackground(new Color(255,255,0));
 		getContentPane().add(mainContainer);
 		
+		JPanel dataPanel = new JPanel();
+		dataPanel.setPreferredSize(new Dimension(1200, 30));
+		dataPanel.setBackground(new Color(0,0,0));
+		mainContainer.add(dataPanel);
+		
 		videoPanel = new JPanel();
 		videoPanel.setPreferredSize(new Dimension(1200, 640));
 		videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
@@ -157,11 +162,6 @@ public class ClientLauncher extends JFrame{
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		scrollPane.setPreferredSize(new Dimension(1200, 100));
 		mainContainer.add(scrollPane);
-		
-		JPanel dataPanel = new JPanel();
-		dataPanel.setPreferredSize(new Dimension(1200, 30));
-		dataPanel.setBackground(new Color(0,0,0));
-		mainContainer.add(dataPanel);
 		
 		pushLog("Starting Client...");
 		setVisible(true);
