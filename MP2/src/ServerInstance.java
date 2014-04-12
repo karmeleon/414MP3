@@ -68,7 +68,7 @@ public class ServerInstance extends Thread {
 	        JSONObject json_msg;
 	        while(pb.getState() != org.gstreamer.State.READY && pb.getState() != org.gstreamer.State.NULL) {
 	        	String nextMsg = in.readLine();
-	        	if(nextMsg.equals(null)) {
+	        	if(nextMsg == null) {
 	        		Server.pushLog("> (" + threadNum + ") CLIENT DISCONNECTED");
 	        		pb.setState(org.gstreamer.State.PAUSED);
 	        		pb.setState(org.gstreamer.State.NULL);
@@ -251,7 +251,8 @@ public class ServerInstance extends Thread {
 
             public void endOfStream(GstObject source) {
             	serverPipe.setState(org.gstreamer.State.NULL);
-            	// kill thread here
+            	Server.pushLog("> (" + threadNum + ") EOS, TERMINATING");
+            	Thread.currentThread().interrupt();
             }
 
         });

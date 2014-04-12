@@ -93,7 +93,6 @@ public class Client {
 			}
 			else { // request = stop
 				commandStop(vc);
-				System.out.println("HERE");
 			}
 		}
 		vc.setPreferredSize(new Dimension(1200, 640));
@@ -166,7 +165,6 @@ public class Client {
         out.println(json_settings.toString());
         
         pushLog("> SYS: CNCT SUCCESS");
-        System.out.println("server: " + serverLoc + " client: " + clientLoc);
         startStreaming(vc, settings, port);
         
         pushLog("> CTRL: LISTENING FOR COMMANDS");
@@ -209,8 +207,6 @@ public class Client {
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
 		
-		System.out.println("Video udp ports init'd");
-		
 		Element udpAudioSrc = null, audioRtcpIn = null, audioRtcpOut = null, taud = null;
 		
 		if(attribute.equalsIgnoreCase("active")) {
@@ -242,8 +238,6 @@ public class Client {
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
 			
-			System.out.println("Audio udp ports init'd");
-			
 		}
 		
 		Element tvid = ElementFactory.make("tee", "tvid");
@@ -274,8 +268,6 @@ public class Client {
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
 		clientPipe.add(videoBin);
 		
-		System.out.println("VideoBin init'd");
-		
 		final Bin audioBin = new Bin("audioBin");
 		
 		if(attribute.equalsIgnoreCase("active")) {
@@ -289,8 +281,6 @@ public class Client {
 			
 			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 			clientPipe.add(audioBin);
-			
-			System.out.println("AudioBin init'd");
 		}
 
 		// RTPBIN
@@ -308,20 +298,15 @@ public class Client {
 			Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
 		}
 		
-		System.out.println("RTP network ports connected");
-		
 		// BUS
 		
 		rtp.connect(new Element.PAD_ADDED() {
 			@Override
 			public void padAdded(Element arg0, Pad arg1) {
-				System.out.println("new output pad");
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
-					System.out.println("found video pad, trying to link to pad " + arg1.getName());
-	                System.out.println(arg1.link(videoBin.getStaticPad("sink")));
+	                arg1.link(videoBin.getStaticPad("sink"));
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
-					System.out.println("found audio pad, trying to link to pad " + arg1.getName());
-					System.out.println(arg1.link(audioBin.getStaticPad("sink")));
+					arg1.link(audioBin.getStaticPad("sink"));
 				}
 			}
 		});
@@ -330,7 +315,7 @@ public class Client {
         
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
-                System.out.println("Error: code=" + code + " message=" + message);
+                pushLog("> GSTREAMER ERROR: code=" + code + " message=" + message);
                 clientPipe.debugToDotFile(1, "client");
             }
         });
@@ -339,7 +324,6 @@ public class Client {
             public void endOfStream(GstObject source) {
             	clientPipe.setState(State.NULL);
                 System.out.println("EOS");
-                System.exit(0);
             }
         });
 		
