@@ -189,7 +189,7 @@ public class Client {
 		
 		System.out.println("Video udp ports init'd");
 		
-		Element udpAudioSrc = null, audioRtcpIn = null, audioRtcpOut = null;
+		Element udpAudioSrc = null, audioRtcpIn = null, audioRtcpOut = null, taud = null;
 		
 		if(attribute.equalsIgnoreCase("active")) {
 			// AUDIO
@@ -197,8 +197,7 @@ public class Client {
 			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
 			udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
 			
-			/*
-			Element taud = ElementFactory.make("tee", "taud");
+			taud = ElementFactory.make("tee", "taud");
 			Element qaud = ElementFactory.make("queue", "qaud");
 			AppSink appAudioSink = (AppSink) ElementFactory.make("appsink", "appAudioSink");
 			appAudioSink.set("emit-signals", true); 
@@ -209,8 +208,8 @@ public class Client {
 				} 
 			});
 			clientPipe.addMany(taud, qaud, appAudioSink);
-			Element.linkMany(taud, qaud, appAudioSink);
-			*/
+			clientPipe.addMany(udpAudioSrc, audioRtcpIn, audioRtcpOut);
+			Element.linkMany(udpAudioSrc, taud, qaud, appAudioSink);
 			
 			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
 			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
@@ -222,7 +221,7 @@ public class Client {
 			audioRtcpOut.set("async", "false");
 			
 			System.out.println("Audio udp ports init'd");
-			clientPipe.addMany(udpAudioSrc, audioRtcpIn, audioRtcpOut);
+			
 		}
 		
 		Element tvid = ElementFactory.make("tee", "tvid");
@@ -235,9 +234,9 @@ public class Client {
 				System.out.println("Video Frame");
 			} 
 		});
-		// clientPipe.addMany(tvid, qvid, appVideoSink);
-		// Element.linkMany(tvid, qvid, appVideoSink);
+		clientPipe.addMany(tvid, qvid, appVideoSink);
 		clientPipe.addMany(udpVideoSrc, videoRtcpIn, videoRtcpOut);
+		Element.linkMany(udpVideoSrc, tvid, qvid, appVideoSink);
 		
 		// VIDEO BIN
 		
@@ -277,12 +276,12 @@ public class Client {
 		final RTPBin rtp = new RTPBin("rtp");
 		clientPipe.add(rtp);
 		
-		Element.linkPads(udpVideoSrc, "src", rtp, "recv_rtp_sink_0");
+		Element.linkPads(tvid, "src1", rtp, "recv_rtp_sink_0");
 		Element.linkPads(videoRtcpIn, "src", rtp, "recv_rtcp_sink_0");
 		Element.linkPads(rtp, "send_rtcp_src_0", videoRtcpOut, "sink");
 		
 		if(attribute.equalsIgnoreCase("active")) {
-			Element.linkPads(udpAudioSrc, "src", rtp, "recv_rtp_sink_1");
+			Element.linkPads(taud, "src1", rtp, "recv_rtp_sink_1");
 			Element.linkPads(audioRtcpIn, "src", rtp, "recv_rtcp_sink_1");
 			Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
 		}
@@ -338,6 +337,7 @@ public class Client {
         	}
         };
         videoThread.start();
+        clientPipe.debugToDotFile(0, "appsink");
 	}
 	
 	public static void updateResource() {
