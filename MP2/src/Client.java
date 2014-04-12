@@ -178,19 +178,6 @@ public class Client {
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
 		udpVideoSrc.set("uri", "udp://127.0.0.1:" + port);
 		
-		Element tvid = ElementFactory.make("tee", "tvid");
-		Element qvid = ElementFactory.make("queue", "qvid");
-		AppSink appVideoSink = (AppSink) ElementFactory.make("appsink", "appVideoSink");
-		appVideoSink.set("emit-signals", true); 
-		appVideoSink.setSync(false);
-		appVideoSink.connect(new AppSink.NEW_BUFFER() { 
-			public void newBuffer(AppSink sink) {
-				System.out.println("Video Frame");
-			} 
-		});
-		clientPipe.addMany(tvid, qvid, appVideoSink);
-		Element.linkMany(tvid, qvid, appVideoSink);
-		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
 		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 1));
 		
@@ -210,6 +197,7 @@ public class Client {
 			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
 			udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
 			
+			/*
 			Element taud = ElementFactory.make("tee", "taud");
 			Element qaud = ElementFactory.make("queue", "qaud");
 			AppSink appAudioSink = (AppSink) ElementFactory.make("appsink", "appAudioSink");
@@ -222,6 +210,7 @@ public class Client {
 			});
 			clientPipe.addMany(taud, qaud, appAudioSink);
 			Element.linkMany(taud, qaud, appAudioSink);
+			*/
 			
 			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
 			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
@@ -236,6 +225,18 @@ public class Client {
 			clientPipe.addMany(udpAudioSrc, audioRtcpIn, audioRtcpOut);
 		}
 		
+		Element tvid = ElementFactory.make("tee", "tvid");
+		Element qvid = ElementFactory.make("queue", "qvid");
+		AppSink appVideoSink = (AppSink) ElementFactory.make("appsink", "appVideoSink");
+		appVideoSink.set("emit-signals", true); 
+		appVideoSink.setSync(false);
+		appVideoSink.connect(new AppSink.NEW_BUFFER() { 
+			public void newBuffer(AppSink sink) {
+				System.out.println("Video Frame");
+			} 
+		});
+		// clientPipe.addMany(tvid, qvid, appVideoSink);
+		// Element.linkMany(tvid, qvid, appVideoSink);
 		clientPipe.addMany(udpVideoSrc, videoRtcpIn, videoRtcpOut);
 		
 		// VIDEO BIN
