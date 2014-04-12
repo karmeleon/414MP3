@@ -2,18 +2,14 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.nio.file.*;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
 
 import javax.swing.*;
 
-import org.gstreamer.Element;
 import org.gstreamer.Gst;
 import org.gstreamer.swing.VideoComponent;
-import org.json.JSONObject;
 
 
 public class ClientLauncher extends JFrame{
