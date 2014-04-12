@@ -39,6 +39,7 @@ public class Client {
 	static String request = "";
 	static Queue<FrameInfo> videoQ;
 	static Queue<FrameInfo> audioQ;
+	static Queue<CompareInfo> jointQ;
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
@@ -57,6 +58,7 @@ public class Client {
 				connectAndPlay(vc, settings);
 				videoQ = new LinkedList<FrameInfo>();
 				audioQ = new LinkedList<FrameInfo>();
+				jointQ = new LinkedList<CompareInfo>();
 			}
 		}
 		else {
@@ -67,6 +69,7 @@ public class Client {
 				commandResume();
 				videoQ = new LinkedList<FrameInfo>();
 				audioQ = new LinkedList<FrameInfo>();
+				jointQ = new LinkedList<CompareInfo>();
 			}
 			else if (request.equalsIgnoreCase("pause")) {
 				commandPause();
@@ -75,11 +78,13 @@ public class Client {
 				commandRewind();
 				videoQ = new LinkedList<FrameInfo>();
 				audioQ = new LinkedList<FrameInfo>();
+				jointQ = new LinkedList<CompareInfo>();
 			}
 			else if (request.equalsIgnoreCase("forward" )) {
 				commandForward();
 				videoQ = new LinkedList<FrameInfo>();
 				audioQ = new LinkedList<FrameInfo>();
+				jointQ = new LinkedList<CompareInfo>();
 			}
 			else { // request = stop
 				commandStop(vc);
