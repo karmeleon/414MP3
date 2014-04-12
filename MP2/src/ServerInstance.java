@@ -118,7 +118,6 @@ public class ServerInstance extends Thread {
 
 	@SuppressWarnings("deprecation")
 	private Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
-		Server.pushLog("> started");
 		String[] s = settings.split(" ");
 		resolution = s[0];          // 240p/480p
 		final String attribute = s[1];     // Passive/Active
