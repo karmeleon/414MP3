@@ -6,9 +6,12 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Scanner;
 import javax.swing.JTextArea;
 import org.gstreamer.Bin;
+import org.gstreamer.Buffer;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
@@ -19,6 +22,7 @@ import org.gstreamer.GstObject;
 import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
 import org.gstreamer.State;
+import org.gstreamer.elements.AppSink;
 import org.gstreamer.elements.good.RTPBin;
 import org.gstreamer.swing.VideoComponent;
 import org.gstreamer.utils.GstDebugUtils;
@@ -33,7 +37,8 @@ public class Client {
 	static String resolution = "";
 	static String attribute = "";
 	static String request = "";
-	// static boolean seeking = false;
+	static Queue<FrameInfo> videoQ;
+	static Queue<FrameInfo> audioQ;
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
@@ -50,6 +55,8 @@ public class Client {
 			// Stop -> Nothing
 			if (request.equalsIgnoreCase("play")) {
 				connectAndPlay(vc, settings);
+				videoQ = new LinkedList<FrameInfo>();
+				audioQ = new LinkedList<FrameInfo>();
 			}
 		}
 		else {
@@ -58,15 +65,21 @@ public class Client {
 			// Stop -> Signal kill and purge pipes
 			if (request.equalsIgnoreCase("play")) {
 				commandResume();
+				videoQ = new LinkedList<FrameInfo>();
+				audioQ = new LinkedList<FrameInfo>();
 			}
 			else if (request.equalsIgnoreCase("pause")) {
 				commandPause();
 			}
 			else if (request.equalsIgnoreCase("rewind")) {
 				commandRewind();
+				videoQ = new LinkedList<FrameInfo>();
+				audioQ = new LinkedList<FrameInfo>();
 			}
 			else if (request.equalsIgnoreCase("forward" )) {
 				commandForward();
+				videoQ = new LinkedList<FrameInfo>();
+				audioQ = new LinkedList<FrameInfo>();
 			}
 			else { // request = stop
 				commandStop(vc);
@@ -152,15 +165,25 @@ public class Client {
 		clientPipe = new Pipeline("pipeline");
 		pushLog("> CTRL: " + "PLAY");
 		pushLog("> SYS: " + " INIT STREAM");
-		// in the real thing these'll just get sent over the control stream, but for now they're hardcoded
-		
-		
-		// UDP
-		
+
 		// VIDEO
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
 		udpVideoSrc.set("uri", "udp://127.0.0.1:" + port);
+		
+		AppSink appVideoSink = (AppSink) ElementFactory.make("appsink", "appVideoSink");
+		appVideoSink.set("emit-signals", true); 
+		appVideoSink.setSync(false);
+		appVideoSink.connect(new AppSink.NEW_BUFFER() { 
+			public void newBuffer(AppSink sink) {
+				// Signal Video Arrival
+				/*
+				Buffer buffer = sink.getLastBuffer();
+				FrameInfo info = new FrameInfo(System.currentTimeMillis(),buffer.getSize()); 
+				q1.offer(info); 
+				*/
+			} 
+		});
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
 		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 1));
@@ -180,6 +203,20 @@ public class Client {
 			udpAudioSrc = ElementFactory.make("udpsrc", "src2");
 			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
 			udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
+			
+			AppSink appAudioSink = (AppSink) ElementFactory.make("appsink", "appAudioSink");
+			appAudioSink.set("emit-signals", true); 
+			appAudioSink.setSync(false);
+			appAudioSink.connect(new AppSink.NEW_BUFFER() { 
+				public void newBuffer(AppSink sink) {
+					// Signal Audio Arrival
+					/*
+					Buffer buffer = sink.getLastBuffer();
+					FrameInfo info = new FrameInfo(System.currentTimeMillis(),buffer.getSize()); 
+					q1.offer(info); 
+					*/
+				} 
+			});
 			
 			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
 			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
@@ -278,6 +315,21 @@ public class Client {
         });
 		
         videoBin.add(vc.getElement());
+        
+        AppSink appJointSink = (AppSink) ElementFactory.make("appsink", "appJointSink");
+		appJointSink.set("emit-signals", true); 
+		appJointSink.setSync(false);
+		appJointSink.connect(new AppSink.NEW_BUFFER() { 
+			public void newBuffer(AppSink sink) {
+				// Signal Video Audio Synchronization
+				/*
+				Buffer buffer = sink.getLastBuffer();
+				FrameInfo info = new FrameInfo(System.currentTimeMillis(),buffer.getSize()); 
+				q1.offer(info); 
+				*/
+			} 
+		});
+		
 		Element.linkMany(videoColor, vc.getElement());
         
         Thread videoThread = new Thread() {

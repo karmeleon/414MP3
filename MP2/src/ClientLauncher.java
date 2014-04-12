@@ -5,6 +5,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.file.*;
 import java.util.*;
+import java.util.List;
+import java.util.Timer;
+
 import javax.swing.*;
 
 import org.gstreamer.Element;
@@ -31,6 +34,8 @@ public class ClientLauncher extends JFrame{
 	boolean playing = false;
 	boolean connected = false;
 	VideoComponent vc;
+	JLabel mon1; JLabel mon2; JLabel mon3; JLabel mon4;
+	Timer monitor;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
@@ -50,8 +55,47 @@ public class ClientLauncher extends JFrame{
 		
 		JPanel dataPanel = new JPanel();
 		dataPanel.setPreferredSize(new Dimension(1200, 30));
+		dataPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		dataPanel.setBackground(new Color(0,0,0));
 		mainContainer.add(dataPanel);
+		
+		List<JLabel> datalabels = new ArrayList<JLabel>();
+		
+		JLabel lctime = new JLabel("Acceptance Rate: ");// "<html>Text color: <font color='red'>red</font></html>"
+		datalabels.add(lctime);
+		JLabel ldtime = new JLabel("Synchronization Skew: ");
+		datalabels.add(ldtime);
+		JLabel lfsize = new JLabel("Media Jitter: ");
+		datalabels.add(lfsize);
+		JLabel lcratio = new JLabel("Failure Rate: ");
+		datalabels.add(lcratio);
+		
+		List<JLabel> datatexts = new ArrayList<JLabel>();
+		mon1 = new JLabel("0");// "<html>Text color: <font color='red'>red</font></html>"
+		datatexts.add(mon1);
+		mon2 = new JLabel("0");
+		datatexts.add(mon2);
+		mon3 = new JLabel("0");
+		datatexts.add(mon3);
+		mon4 = new JLabel("0");
+		datatexts.add(mon4);
+		
+		for (int i = 0; i < 4; i++) {
+			datalabels.get(i).setHorizontalAlignment(SwingConstants.RIGHT);
+			datalabels.get(i).setPreferredSize(new Dimension(200, 30));
+			datalabels.get(i).setForeground(Color.white);
+		}
+		
+		for (int i = 0; i < 4; i++) {
+			datatexts.get(i).setHorizontalAlignment(SwingConstants.LEFT);
+			datatexts.get(i).setPreferredSize(new Dimension(100, 30));
+			datatexts.get(i).setForeground(Color.white);
+		}
+		
+		for (int i = 0; i < 4; i++) {
+			dataPanel.add(datalabels.get(i));
+			dataPanel.add(datatexts.get(i));
+		}
 		
 		videoPanel = new JPanel();
 		videoPanel.setPreferredSize(new Dimension(1200, 640));
@@ -196,6 +240,21 @@ public class ClientLauncher extends JFrame{
 				}
 			};
 			clientThread.start();
+			/*
+			rectimer = new Timer();
+			rectimer.scheduleAtFixedRate(new TimerTask() {
+				public void run() {
+					// List<Long> data = new ArrayList<Long>();
+					while(pipe.getQueue1().peek() != null && pipe.getQueue2().peek() != null) {
+						tctime.setText((""+ (pipe.getQueue2().peek().getFrameTime() - pipe.getQueue1().peek().getFrameTime())));
+						tfsize.setText("" + pipe.getQueue2().peek().getFrameSize());
+						tcratio.setText(""+ pipe.getQueue2().peek().getFrameSize() / (double) pipe.getQueue1().peek().getFrameSize());
+						pipe.getQueue1().poll();
+						pipe.getQueue2().poll();
+					}
+				}
+			}, 0, 25);
+			*/
 			return (playing = true);
 		}
 		else { // if (playing)
@@ -208,6 +267,7 @@ public class ClientLauncher extends JFrame{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+			monitor.cancel();
 			return (playing = false);
 		}
 		
