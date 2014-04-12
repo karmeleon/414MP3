@@ -29,24 +29,25 @@ import org.json.JSONObject;
 public class ServerInstance extends Thread {
 
 	private String resolution;
-	String serverLoc, clientLoc;
-	int port;
-	Socket skt;
+	private String serverLoc, clientLoc;
+	private int port;
+	private Socket skt;
 	private int clientbw;
 	private int serverbw;
 	private boolean seeking;
 	private Pipeline serverPipe;
+	private int threadNum;
 	
-	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt) {
+	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num) {
 		serverLoc = serverIP;
 		clientLoc = clientIP;
 		port = startPort;
 		this.skt = skt;
-		System.out.println("server: " + serverLoc + " client: " + clientLoc);
+		threadNum = num;
 	}
 	
 	public void run() {
-		Server.pushLog("> NEW THREAD FOR CLIENT " + clientLoc);
+		Server.pushLog("> (" + threadNum + ") NEW THREAD FOR CLIENT " + clientLoc);
 		try {
 			updateResource();
 			
@@ -59,7 +60,7 @@ public class ServerInstance extends Thread {
 	        
 	        JSONObject json_settings = new JSONObject(in.readLine());
 	        String settings = json_settings.getString("settings");
-	        Server.pushLog("> SYS: REQ " + settings);
+	        Server.pushLog("> (" + threadNum + ") SYS: REQ " + settings);
 			
 			Pipeline pb = startStreaming(settings);
 	        
@@ -67,7 +68,13 @@ public class ServerInstance extends Thread {
 	        JSONObject json_msg;
 	        while(pb.getState() != org.gstreamer.State.READY && pb.getState() != org.gstreamer.State.NULL) {
 	        	String nextMsg = in.readLine();
-	        	Server.pushLog("> SYS: GOT " + nextMsg);
+	        	if(nextMsg.equals(null)) {
+	        		Server.pushLog("> (" + threadNum + ") CLIENT DISCONNECTED");
+	        		pb.setState(org.gstreamer.State.PAUSED);
+	        		pb.setState(org.gstreamer.State.NULL);
+	        		break;
+	        	}
+	        	Server.pushLog("> (" + threadNum + ") SYS: GOT " + nextMsg);
 	        	
 	        	json_msg = new JSONObject(nextMsg);
 	        	String command = json_msg.getString("command");
@@ -177,13 +184,10 @@ public class ServerInstance extends Thread {
 				Caps caps = pad.getCaps();
 				Structure struct = caps.getStructure(0);
 				if(struct.getName().startsWith("audio/") && attribute.equalsIgnoreCase("active")) {
-					System.out.println("Linking audio pad: " + struct.getName());
 					pad.link(audioBin.getStaticPad("sink"));
 				} else if(struct.getName().startsWith("video/")) {
-					System.out.println("Linking video pad: " + struct.getName());
 					pad.link(videoBin.getStaticPad("sink"));
 				} else {
-					System.out.println("Unknown pad [" + struct.getName() + "]");
 				}
 			}
 		});
@@ -191,7 +195,6 @@ public class ServerInstance extends Thread {
         serverPipe.addMany(filesrc, decode);
 		Element.linkMany(filesrc, decode);
 		
-		// https://github.com/ClementNotin/gstreamer-rtp-experiments/blob/master/src/main/java/RoomSender.java
 		RTPBin rtp = new RTPBin("rtp");
 		serverPipe.add(rtp);
 		
@@ -241,14 +244,14 @@ public class ServerInstance extends Thread {
         
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
-                System.out.println("Error: code=" + code + " message=" + message);
+                Server.pushLog("> (" + threadNum + ") GSTREAMER ERROR: code=" + code + " message=" + message);
             }
         });
         bus.connect(new Bus.EOS() {
 
             public void endOfStream(GstObject source) {
             	serverPipe.setState(org.gstreamer.State.NULL);
-                System.out.println("EOS");
+            	// kill thread here
             }
 
         });
@@ -277,7 +280,7 @@ public class ServerInstance extends Thread {
 			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 250.0)));
 		videorate.set("force-fps", "" + setfps);
 		if (Server.textArea != null)
-			Server.pushLog("> SYS: NEGT FPS " + setfps);
+			Server.pushLog("> (" + threadNum + ") SYS: NEGT FPS " + setfps);
 	}
 	
 	public void updateResource() {
@@ -309,7 +312,7 @@ public class ServerInstance extends Thread {
 		
 		serverbw = bandwidth;
         if (Server.textArea != null)
-        	Server.pushLog("> RSRC: SET BW " + bandwidth);
+        	Server.pushLog("> (" + threadNum + ") RSRC: SET BW " + bandwidth);
         
         if (serverPipe != null) {
         	if (serverPipe.getState() != org.gstreamer.State.NULL) {

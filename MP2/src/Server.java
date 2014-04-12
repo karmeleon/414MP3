@@ -61,6 +61,7 @@ public class Server {
 		}
 		
 		int currentPort = 45010;	// the server uses port to port+7
+		int currThread = 0;
 		
 		while(true) { // y = 2.4 * x + 240
 			try {
@@ -69,10 +70,11 @@ public class Server {
 		        String clientLoc = skt.getRemoteSocketAddress().toString();
 		        clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
 		        
-		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt);
+		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt, currThread);
 		        thr.start();
 		        
 		        currentPort += 10;
+		        currThread++;
 		        
 			} catch(Exception e1) {
 				e1.printStackTrace();

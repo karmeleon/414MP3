@@ -260,7 +260,6 @@ public class ClientLauncher extends JFrame{
 			try {
 				Client.handleRequest(vc, settings, textArea);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			monitor.cancel();
