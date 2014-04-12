@@ -63,6 +63,7 @@ public class Server {
 		int currentPort = 45010;	// the server uses port to port+7
 		
 		while(true) { // y = 2.4 * x + 240
+			System.out.println("looking for new client");
 			try {
 		        Socket skt = srvr.accept();
 		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());

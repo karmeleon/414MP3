@@ -45,7 +45,7 @@ public class ServerInstance extends Thread {
 		System.out.println("server: " + serverLoc + " client: " + clientLoc);
 	}
 	
-	public void start() {
+	public void run() {
 		Server.pushLog("> NEW THREAD FOR CLIENT " + clientLoc);
 		try {
 			updateResource();
@@ -250,7 +250,6 @@ public class ServerInstance extends Thread {
             public void endOfStream(GstObject source) {
             	serverPipe.setState(org.gstreamer.State.NULL);
                 System.out.println("EOS");
-                System.exit(0);
             }
 
         });

@@ -226,7 +226,7 @@ public class Client {
 			appAudioSink.setSync(false);
 			appAudioSink.connect(new AppSink.NEW_BUFFER() { 
 				public void newBuffer(AppSink sink) {
-					System.out.println("Audio Frame");
+					//System.out.println("Audio Frame");
 				} 
 			});
 			clientPipe.addMany(taud, qaud, appAudioSink);
@@ -253,7 +253,7 @@ public class Client {
 		appVideoSink.setSync(false);
 		appVideoSink.connect(new AppSink.NEW_BUFFER() { 
 			public void newBuffer(AppSink sink) {
-				System.out.println("Video Frame");
+				//System.out.println("Video Frame");
 			} 
 		});
 		clientPipe.addMany(tvid, qvid, appVideoSink);
