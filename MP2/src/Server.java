@@ -208,7 +208,6 @@ public class Server {
 			
 			@Override
 			public void newDecodedPad(DecodeBin2 elem, Pad pad, boolean last) {
-				// TODO Auto-generated method stub
 				if(pad.isLinked())
 					return;
 				
@@ -235,17 +234,17 @@ public class Server {
 		
 		// UDP ELEMENTS
 		Element videoDataOut = ElementFactory.make("udpsink", "videodatout");
-		videoDataOut.set("host", serverLoc);
+		videoDataOut.set("host", clientLoc);
 		videoDataOut.set("port", "" + port);
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "videortcpout");
-		videoRtcpOut.set("host", serverLoc);
+		videoRtcpOut.set("host", clientLoc);
 		videoRtcpOut.set("port", "" + (port + 1));
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "videortcpin");
-		videoRtcpIn.set("uri", "udp://" + clientLoc + ":" + (port + 5));
+		videoRtcpIn.set("uri", "udp://" + serverLoc + ":" + (port + 5));
 		
 		serverPipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn);
 		
@@ -256,17 +255,17 @@ public class Server {
 		
 		if(attribute.equalsIgnoreCase("active")) {
 			Element audioDataOut = ElementFactory.make("udpsink", "audiodatout");
-			audioDataOut.set("host", serverLoc);
+			audioDataOut.set("host", clientLoc);
 			audioDataOut.set("port", "" + (port + 2));
 			
 			Element audioRtcpOut = ElementFactory.make("udpsink", "audiortcpout");
-			audioRtcpOut.set("host", serverLoc);
+			audioRtcpOut.set("host", clientLoc);
 			audioRtcpOut.set("port", "" + (port + 3));
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
 			
 			Element audioRtcpIn = ElementFactory.make("udpsrc", "audiortcpin");
-			audioRtcpIn.set("uri", "udp://" + clientLoc + ":" + (port + 7));
+			audioRtcpIn.set("uri", "udp://" + serverLoc + ":" + (port + 7));
 			serverPipe.addMany(audioDataOut, audioRtcpOut, audioRtcpIn);
 			
 			Element.linkPads(audioBin, "src", rtp, "send_rtp_sink_1");

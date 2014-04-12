@@ -29,7 +29,6 @@ import org.gstreamer.State;
 import org.gstreamer.elements.AppSink;
 import org.gstreamer.elements.good.RTPBin;
 import org.gstreamer.swing.VideoComponent;
-import org.gstreamer.utils.GstDebugUtils;
 import org.json.JSONObject;
 
 public class Client {
@@ -46,7 +45,7 @@ public class Client {
 	static Queue<CompareInfo> jointQ;
 	
 	static String clientLoc;
-	static String serverLoc = "130.126.210.236";
+	static String serverLoc = "130.126.210.132";
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
@@ -198,13 +197,15 @@ public class Client {
 		// VIDEO
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
-		udpVideoSrc.set("uri", "udp://" + serverLoc +":" + port);
+		udpVideoSrc.set("uri", "udp://" + clientLoc +":" + port);
+		
+		System.out.println("ding");
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
-		videoRtcpIn.set("uri", "udp://" + serverLoc +":" + (port + 1));
+		videoRtcpIn.set("uri", "udp://" + clientLoc +":" + (port + 1));
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "snk1");
-		videoRtcpOut.set("host", clientLoc);
+		videoRtcpOut.set("host", serverLoc);
 		videoRtcpOut.set("port", "" + (port + 5));
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
@@ -217,7 +218,7 @@ public class Client {
 			// AUDIO
 			udpAudioSrc = ElementFactory.make("udpsrc", "src2");
 			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-			udpAudioSrc.set("uri", "udp://" + serverLoc +":" + (port + 2));
+			udpAudioSrc.set("uri", "udp://" + clientLoc +":" + (port + 2));
 			
 			taud = ElementFactory.make("tee", "taud");
 			Element qaud = ElementFactory.make("queue", "qaud");
@@ -234,10 +235,10 @@ public class Client {
 			Element.linkMany(udpAudioSrc, taud, qaud, appAudioSink);
 			
 			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
-			audioRtcpIn.set("uri", "udp://" + serverLoc +":" + (port + 3));
+			audioRtcpIn.set("uri", "udp://" + clientLoc +":" + (port + 3));
 			
 			audioRtcpOut = ElementFactory.make("udpsink", "snk2");
-			audioRtcpOut.set("host", clientLoc);
+			audioRtcpOut.set("host", serverLoc);
 			audioRtcpOut.set("port", "" + (port + 7));
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
@@ -308,11 +309,14 @@ public class Client {
 			Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
 		}
 		
+		System.out.println("RTP network ports connected");
+		
 		// BUS
 		
 		rtp.connect(new Element.PAD_ADDED() {
 			@Override
 			public void padAdded(Element arg0, Pad arg1) {
+				System.out.println("new output pad");
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
 					System.out.println("found video pad, trying to link to pad " + arg1.getName());
 	                System.out.println(arg1.link(videoBin.getStaticPad("sink")));
@@ -328,8 +332,7 @@ public class Client {
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
                 System.out.println("Error: code=" + code + " message=" + message);
-             // GST_DEBUG_DUMP_DOT_DIR
-                GstDebugUtils.gstDebugBinToDotFile(clientPipe, 1, "client");
+                clientPipe.debugToDotFile(1, "client");
             }
         });
         bus.connect(new Bus.EOS() {
