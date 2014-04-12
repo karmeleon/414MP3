@@ -15,7 +15,6 @@ import java.util.Queue;
 import java.util.Scanner;
 import javax.swing.JTextArea;
 import org.gstreamer.Bin;
-import org.gstreamer.Buffer;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
@@ -45,7 +44,7 @@ public class Client {
 	static Queue<CompareInfo> jointQ;
 	
 	static String clientLoc;
-	static String serverLoc = "130.126.210.132";
+	static String serverLoc = "130.126.210.236";
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
@@ -159,13 +158,16 @@ public class Client {
         BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
         out = new PrintWriter(skt.getOutputStream(), true);
 
+        JSONObject portNeg = new JSONObject(in.readLine());
+        int port = portNeg.getInt("port");
+        
         JSONObject json_settings = new JSONObject();
         json_settings.put("settings", settings);
         out.println(json_settings.toString());
         
         pushLog("> SYS: CNCT SUCCESS");
         System.out.println("server: " + serverLoc + " client: " + clientLoc);
-        startStreaming(vc, settings);
+        startStreaming(vc, settings, port);
         
         pushLog("> CTRL: LISTENING FOR COMMANDS");
         Scanner s = new Scanner(System.in);
@@ -187,9 +189,8 @@ public class Client {
         skt.close();
 	}
 	
-	private static void startStreaming(final VideoComponent vc, String settings) {
+	private static void startStreaming(final VideoComponent vc, String settings, int port) {
 		Gst.init();
-		final int port = 45001;
 		clientPipe = new Pipeline("pipeline");
 		pushLog("> CTRL: " + "PLAY");
 		pushLog("> SYS: " + " INIT STREAM");
@@ -198,8 +199,6 @@ public class Client {
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
 		udpVideoSrc.set("uri", "udp://" + clientLoc +":" + port);
-		
-		System.out.println("ding");
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
 		videoRtcpIn.set("uri", "udp://" + clientLoc +":" + (port + 1));

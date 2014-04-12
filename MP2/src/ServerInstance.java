@@ -1,20 +1,12 @@
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.util.Enumeration;
-
-import javax.swing.JTextArea;
-
 import org.gstreamer.Bin;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
@@ -28,137 +20,109 @@ import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
 import org.gstreamer.SeekFlags;
 import org.gstreamer.SeekType;
-import org.gstreamer.State;
 import org.gstreamer.Structure;
 import org.gstreamer.elements.DecodeBin2;
-import org.gstreamer.elements.PlayBin2;
 import org.gstreamer.elements.good.RTPBin;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Server {
 
-	/**
-	 * @param args
-	 */
-	static PrintWriter out;
-	static int clientbw = 0;
-	static boolean closeResourceInfoStream = true;
-	static JTextArea textArea = null;
-	static boolean seeking = false;
-	static int serverbw = 0;
-	static String resolution = "";
-	static Pipeline serverPipe = null;
+public class ServerInstance extends Thread {
+
+	private String resolution;
+	String serverLoc, clientLoc;
+	int port;
+	Socket skt;
+	private int clientbw;
+	private int serverbw;
+	private boolean seeking;
+	private Pipeline serverPipe;
 	
-	static String serverLoc;
-	static String clientLoc;
-	
-	public static void startServer(JTextArea log) {
-		textArea = log;
-		updateResource();
-		while(true) { // y = 2.4 * x + 240
-			try {
-				log.setText("");
-				pushLog("> CTRL: Starting Server ...");
-				InetAddress inet = null;
-				// find this ip
-				Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-				while(e.hasMoreElements())
-				{
-					NetworkInterface n = (NetworkInterface) e.nextElement();
-					Enumeration<InetAddress> ee = n.getInetAddresses();
-					while (ee.hasMoreElements())
-					{
-						InetAddress i = (InetAddress) ee.nextElement();
-						if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
-							pushLog("SRVR START IP:" + i.getHostAddress());
-						    serverLoc = i.getHostAddress();
-						    inet = i;
-						}
-					}
-				}
-				ServerSocket srvr = new ServerSocket(45000, 1, inet);
-				srvr.setReuseAddress(true);
-		        Socket skt = srvr.accept();
-		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
-		        clientLoc = skt.getRemoteSocketAddress().toString();
-		        clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
-		        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-		        out = new PrintWriter(skt.getOutputStream(), true);
-		        
-		        JSONObject json_settings = new JSONObject(in.readLine());
-		        String settings = json_settings.getString("settings");
-		        pushLog("> SYS: REQ " + settings);
-		        
-		        System.out.println("server: " + serverLoc + " client: " + clientLoc);
-		        
-		        Pipeline pb = startStreaming(settings);
-		        
-		        // listen for commands
-		        JSONObject json_msg;
-		        while(pb.getState() != State.READY && pb.getState() != State.NULL) {
-		        	//pb.debugToDotFile(0, "server");
-		        	String nextMsg = in.readLine();
-		        	pushLog("> SYS: GOT " + nextMsg);
-		        	
-		        	json_msg = new JSONObject(nextMsg);
-		        	String command = json_msg.getString("command");
-		        	
-		        	try {
-		        		clientbw = Integer.parseInt(command);
-		        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
-		        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
-		        	} catch(Exception ex) {
-		        		// this isn't an fps command, ignore it here
-		        	}
-		        	
-		        	switch(command) {
-		        	case "play":
-		        		if (seeking) {
-		        			seeking = false;
-		        			pb.seek(1.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
-		        		}
-		        		pb.setState(State.PLAYING);
-		        		break;
-		        	case "pause":
-		        		pb.setState(State.PAUSED);
-		        		break;
-		        	case "stop":
-		        		pb.setState(State.PAUSED);
-		        		pb.setState(State.NULL);
-		        		break;
-		        	case "ff":
-		        		seeking = true;
-		        		pb.seek(2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
-		        		break;
-		        	case "rw":
-		        		seeking = true;
-		        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
-		        		break;
-		        	default :
-		        		break;
-		        	}
-		        }
-		        
-		        in.close();
-		        out.close();
-		        skt.close();
-		        srvr.close();
-			} catch(Exception e) {
-				e.printStackTrace();
-			}
-		}
+	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt) {
+		serverLoc = serverIP;
+		clientLoc = clientIP;
+		port = startPort;
+		this.skt = skt;
+		System.out.println("server: " + serverLoc + " client: " + clientLoc);
 	}
 	
+	public void start() {
+		Server.pushLog("> NEW THREAD FOR CLIENT " + clientLoc);
+		try {
+			updateResource();
+			
+			BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
+	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+	        
+	        JSONObject portNeg = new JSONObject();
+	        portNeg.put("port", port);
+	        out.println(portNeg.toString());
+	        
+	        JSONObject json_settings = new JSONObject(in.readLine());
+	        String settings = json_settings.getString("settings");
+	        Server.pushLog("> SYS: REQ " + settings);
+			
+			Pipeline pb = startStreaming(settings);
+	        
+	        // listen for commands
+	        JSONObject json_msg;
+	        while(pb.getState() != org.gstreamer.State.READY && pb.getState() != org.gstreamer.State.NULL) {
+	        	String nextMsg = in.readLine();
+	        	Server.pushLog("> SYS: GOT " + nextMsg);
+	        	
+	        	json_msg = new JSONObject(nextMsg);
+	        	String command = json_msg.getString("command");
+	        	
+	        	try {
+	        		clientbw = Integer.parseInt(command);
+	        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
+	        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
+	        	} catch(Exception ex) {
+	        		// this isn't an fps command, ignore it here
+	        	}
+	        	
+	        	switch(command) {
+	        	case "play":
+	        		if (seeking) {
+	        			seeking = false;
+	        			pb.seek(1.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
+	        		}
+	        		pb.setState(org.gstreamer.State.PLAYING);
+	        		break;
+	        	case "pause":
+	        		pb.setState(org.gstreamer.State.PAUSED);
+	        		break;
+	        	case "stop":
+	        		pb.setState(org.gstreamer.State.PAUSED);
+	        		pb.setState(org.gstreamer.State.NULL);
+	        		break;
+	        	case "ff":
+	        		seeking = true;
+	        		pb.seek(2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
+	        		break;
+	        	case "rw":
+	        		seeking = true;
+	        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
+	        		break;
+	        	default :
+	        		break;
+	        	}
+	        }
+	        
+	        in.close();
+	        out.close();
+	        skt.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	@SuppressWarnings("deprecation")
-	private static Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
+	private Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
+		Server.pushLog("> started");
 		String[] s = settings.split(" ");
 		resolution = s[0];          // 240p/480p
 		final String attribute = s[1];     // Passive/Active
 		clientbw = Integer.parseInt(s[2]); // Some amount
-		
-		final int port = 45001;
 		Gst.init();
 		
 		serverPipe = new Pipeline();
@@ -284,7 +248,7 @@ public class Server {
         bus.connect(new Bus.EOS() {
 
             public void endOfStream(GstObject source) {
-            	serverPipe.setState(State.NULL);
+            	serverPipe.setState(org.gstreamer.State.NULL);
                 System.out.println("EOS");
                 System.exit(0);
             }
@@ -296,7 +260,7 @@ public class Server {
         return serverPipe;
 	}
 	
-	public static void negotiate(Element videorate,  int cbw, int sbw) {
+	public void negotiate(Element videorate,  int cbw, int sbw) {
 		// kilobits per second
 		// 720 - 1000 kbps -> 30fps
 		// 480 - 750 kbps -> 30fps
@@ -314,10 +278,11 @@ public class Server {
 		if (res == 240)
 			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 250.0)));
 		videorate.set("force-fps", "" + setfps);
-		if (textArea != null) pushLog("> SYS: NEGT FPS " + setfps);
+		if (Server.textArea != null)
+			Server.pushLog("> SYS: NEGT FPS " + setfps);
 	}
 	
-	public static void updateResource() {
+	public void updateResource() {
 		int bandwidth = 0;
 		BufferedReader br = null;
 		try {
@@ -345,16 +310,14 @@ public class Server {
 		}
 		
 		serverbw = bandwidth;
-        if (textArea != null) pushLog("> RSRC: SET BW " + bandwidth);
+        if (Server.textArea != null)
+        	Server.pushLog("> RSRC: SET BW " + bandwidth);
         
         if (serverPipe != null) {
-        	if (serverPipe.getState() != State.NULL) {
+        	if (serverPipe.getState() != org.gstreamer.State.NULL) {
         		Bin videoBin = (Bin) serverPipe.getElementByName("VideoBin");
         		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
         	}
         }
-	}
-	public static void pushLog(String line) {
-		textArea.setText(textArea.getText() + line + "\n");
 	}
 }
