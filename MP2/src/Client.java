@@ -5,8 +5,11 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
@@ -41,6 +44,9 @@ public class Client {
 	static Queue<FrameInfo> videoQ;
 	static Queue<FrameInfo> audioQ;
 	static Queue<CompareInfo> jointQ;
+	
+	static String clientLoc;
+	static String serverLoc = "130.126.210.236";
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
 		textArea = log;
@@ -134,7 +140,22 @@ public class Client {
 	}
 
 	private static void connectAndPlay(VideoComponent vc, String settings) throws UnknownHostException, IOException {
-		Socket skt = new Socket("localhost", 45000);
+		// find this ip
+		Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+		while(e.hasMoreElements())
+		{
+			NetworkInterface n = (NetworkInterface) e.nextElement();
+			Enumeration<InetAddress> ee = n.getInetAddresses();
+			while (ee.hasMoreElements())
+			{
+				InetAddress i = (InetAddress) ee.nextElement();
+				if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
+					pushLog("CLNT START IP:" + i.getHostAddress());
+				    clientLoc = i.getHostAddress();
+				}
+			}
+		}
+		Socket skt = new Socket(serverLoc, 45000);
 		skt.setReuseAddress(true);
         BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
         out = new PrintWriter(skt.getOutputStream(), true);
@@ -144,6 +165,7 @@ public class Client {
         out.println(json_settings.toString());
         
         pushLog("> SYS: CNCT SUCCESS");
+        System.out.println("server: " + serverLoc + " client: " + clientLoc);
         startStreaming(vc, settings);
         
         pushLog("> CTRL: LISTENING FOR COMMANDS");
@@ -176,13 +198,13 @@ public class Client {
 		// VIDEO
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
-		udpVideoSrc.set("uri", "udp://127.0.0.1:" + port);
+		udpVideoSrc.set("uri", "udp://" + serverLoc +":" + port);
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
-		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 1));
+		videoRtcpIn.set("uri", "udp://" + serverLoc +":" + (port + 1));
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "snk1");
-		videoRtcpOut.set("host", "127.0.0.1");
+		videoRtcpOut.set("host", clientLoc);
 		videoRtcpOut.set("port", "" + (port + 5));
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
@@ -195,7 +217,7 @@ public class Client {
 			// AUDIO
 			udpAudioSrc = ElementFactory.make("udpsrc", "src2");
 			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-			udpAudioSrc.set("uri", "udp://127.0.0.1:" + (port + 2));
+			udpAudioSrc.set("uri", "udp://" + serverLoc +":" + (port + 2));
 			
 			taud = ElementFactory.make("tee", "taud");
 			Element qaud = ElementFactory.make("queue", "qaud");
@@ -212,10 +234,10 @@ public class Client {
 			Element.linkMany(udpAudioSrc, taud, qaud, appAudioSink);
 			
 			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
-			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 3));
+			audioRtcpIn.set("uri", "udp://" + serverLoc +":" + (port + 3));
 			
 			audioRtcpOut = ElementFactory.make("udpsink", "snk2");
-			audioRtcpOut.set("host", "127.0.0.1");
+			audioRtcpOut.set("host", clientLoc);
 			audioRtcpOut.set("port", "" + (port + 7));
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
