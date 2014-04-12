@@ -5,10 +5,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Enumeration;
 
 import javax.swing.JTextArea;
 
@@ -48,6 +51,9 @@ public class Server {
 	static String resolution = "";
 	static Pipeline serverPipe = null;
 	
+	static String serverLoc;
+	static String clientLoc;
+	
 	public static void startServer(JTextArea log) {
 		textArea = log;
 		updateResource();
@@ -55,16 +61,37 @@ public class Server {
 			try {
 				log.setText("");
 				pushLog("> CTRL: Starting Server ...");
-				ServerSocket srvr = new ServerSocket(45000);
+				InetAddress inet = null;
+				// find this ip
+				Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+				while(e.hasMoreElements())
+				{
+					NetworkInterface n = (NetworkInterface) e.nextElement();
+					Enumeration<InetAddress> ee = n.getInetAddresses();
+					while (ee.hasMoreElements())
+					{
+						InetAddress i = (InetAddress) ee.nextElement();
+						if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
+							pushLog("SRVR START IP:" + i.getHostAddress());
+						    serverLoc = i.getHostAddress();
+						    inet = i;
+						}
+					}
+				}
+				ServerSocket srvr = new ServerSocket(45000, 1, inet);
 				srvr.setReuseAddress(true);
 		        Socket skt = srvr.accept();
 		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
+		        clientLoc = skt.getRemoteSocketAddress().toString();
+		        clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
 		        BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 		        out = new PrintWriter(skt.getOutputStream(), true);
 		        
 		        JSONObject json_settings = new JSONObject(in.readLine());
 		        String settings = json_settings.getString("settings");
 		        pushLog("> SYS: REQ " + settings);
+		        
+		        System.out.println("server: " + serverLoc + " client: " + clientLoc);
 		        
 		        Pipeline pb = startStreaming(settings);
 		        
@@ -82,7 +109,7 @@ public class Server {
 		        		clientbw = Integer.parseInt(command);
 		        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
 		        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
-		        	} catch(Exception e) {
+		        	} catch(Exception ex) {
 		        		// this isn't an fps command, ignore it here
 		        	}
 		        	
@@ -181,7 +208,6 @@ public class Server {
 			
 			@Override
 			public void newDecodedPad(DecodeBin2 elem, Pad pad, boolean last) {
-				// TODO Auto-generated method stub
 				if(pad.isLinked())
 					return;
 				
@@ -208,17 +234,17 @@ public class Server {
 		
 		// UDP ELEMENTS
 		Element videoDataOut = ElementFactory.make("udpsink", "videodatout");
-		videoDataOut.set("host", "127.0.0.1");
+		videoDataOut.set("host", clientLoc);
 		videoDataOut.set("port", "" + port);
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "videortcpout");
-		videoRtcpOut.set("host", "127.0.0.1");
+		videoRtcpOut.set("host", clientLoc);
 		videoRtcpOut.set("port", "" + (port + 1));
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "videortcpin");
-		videoRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 5));
+		videoRtcpIn.set("uri", "udp://" + serverLoc + ":" + (port + 5));
 		
 		serverPipe.addMany(videoDataOut, videoRtcpOut, videoRtcpIn);
 		
@@ -229,17 +255,17 @@ public class Server {
 		
 		if(attribute.equalsIgnoreCase("active")) {
 			Element audioDataOut = ElementFactory.make("udpsink", "audiodatout");
-			audioDataOut.set("host", "127.0.0.1");
+			audioDataOut.set("host", clientLoc);
 			audioDataOut.set("port", "" + (port + 2));
 			
 			Element audioRtcpOut = ElementFactory.make("udpsink", "audiortcpout");
-			audioRtcpOut.set("host", "127.0.0.1");
+			audioRtcpOut.set("host", clientLoc);
 			audioRtcpOut.set("port", "" + (port + 3));
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
 			
 			Element audioRtcpIn = ElementFactory.make("udpsrc", "audiortcpin");
-			audioRtcpIn.set("uri", "udp://127.0.0.1:" + (port + 7));
+			audioRtcpIn.set("uri", "udp://" + serverLoc + ":" + (port + 7));
 			serverPipe.addMany(audioDataOut, audioRtcpOut, audioRtcpIn);
 			
 			Element.linkPads(audioBin, "src", rtp, "send_rtp_sink_1");
