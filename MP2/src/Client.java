@@ -235,6 +235,7 @@ public class Client {
 			AppSink appAudioSink = (AppSink) ElementFactory.make("appsink", "appAudioSink");
 			appAudioSink.set("emit-signals", true); 
 			appAudioSink.setSync(false);
+			audioQ = new LinkedList<FrameInfo>();
 			appAudioSink.connect(new AppSink.NEW_BUFFER() { 
 				public void newBuffer(AppSink sink) {
 					//System.out.println("Audio Frame");
@@ -260,12 +261,13 @@ public class Client {
 		AppSink appVideoSink = (AppSink) ElementFactory.make("appsink", "appVideoSink");
 		appVideoSink.set("emit-signals", true); 
 		appVideoSink.setSync(false);
+		videoQ = new LinkedList<FrameInfo>();
 		appVideoSink.connect(new AppSink.NEW_BUFFER() { 
 			public void newBuffer(AppSink sink) {
 				Buffer b = sink.getLastBuffer();
 				if (b != null) {
 					// NullPointerException on this line
-					// videoQ.offer(new FrameInfo(System.currentTimeMillis(), b.getSize()));
+					videoQ.offer(new FrameInfo(System.currentTimeMillis(), b.getSize()));
 				}
 			} 
 		});
@@ -351,6 +353,7 @@ public class Client {
         AppSink appJointSink = (AppSink) ElementFactory.make("appsink", "appJointSink");
 		appJointSink.set("emit-signals", true); 
 		appJointSink.setSync(false);
+		jointQ = new LinkedList<CompareInfo>();
 		appJointSink.connect(new AppSink.NEW_BUFFER() { 
 			public void newBuffer(AppSink sink) {
 			} 
