@@ -32,7 +32,6 @@ public class ClientLauncher extends JFrame{
 	VideoComponent vc;
 	JLabel mon1; JLabel mon2; JLabel mon3; JLabel mon4;
 	Timer monitor;
-	// static JComboBox<String> netOption;
 	static JTextField netAddress;
 	
 	public ClientLauncher() throws IOException {
@@ -243,22 +242,56 @@ public class ClientLauncher extends JFrame{
 				}
 			};
 			clientThread.start();
-			/*
 			monitor = new Timer();
 			monitor.scheduleAtFixedRate(new TimerTask() {
 				public void run() {
-					// List<Long> data = new ArrayList<Long>();
-					if (Client.videoQ != null) {
-						if (Client.videoQ.peek() != null) {
+					double vsizesum = 0;
+					double asizesum = 0;
+					double vtimesum = 0;
+					double atimesum = 0;
+					double vcount = 0;
+					double acount = 0;
+					
+					if (Client.videoQ != null && Client.audioQ != null && Client.videoQ.size() > 0 && Client.audioQ.size() > 0) {
+						vcount = Client.videoQ.size();
+						acount = Client.audioQ.size();
+						
+						while (Client.videoQ.peek() != null) {
+							// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+							vsizesum+= Client.videoQ.peek().getFrameSize();
+							vtimesum+= Client.videoQ.peek().getFrameTime();
+							Client.videoQ.poll();
+						}
+						while (Client.audioQ.peek() != null) {
+							// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+							asizesum+= Client.audioQ.peek().getFrameSize();
+							atimesum+= Client.audioQ.peek().getFrameTime();
+							Client.audioQ.poll();
+						}
+						
+						int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+						int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
+						
+						mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
+						mon2.setText("" + (vtimeAVG - atimeAVG));
+					}
+					else {
+						if (Client.videoQ != null && Client.videoQ.size() > 0) {
+							vcount = Client.videoQ.size();
 							while (Client.videoQ.peek() != null) {
-								mon1.setText("" + Client.videoQ.peek().getFrameSize());
+								// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+								vsizesum+= Client.videoQ.peek().getFrameSize();
+								vtimesum+= Client.videoQ.peek().getFrameTime();
 								Client.videoQ.poll();
 							}
+							
+							int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+							mon1.setText("" + (vsizeAVG * 4));
+							mon2.setText("N/A");
 						}
 					}
 				}
-			}, 0, 25);
-			*/
+			}, 0, 250);
 			
 			return (playing = true);
 		}
@@ -271,7 +304,7 @@ public class ClientLauncher extends JFrame{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			// monitor.cancel();
+			monitor.cancel();
 			return (playing = false);
 		}
 		

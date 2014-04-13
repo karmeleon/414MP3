@@ -238,7 +238,10 @@ public class Client {
 			audioQ = new LinkedList<FrameInfo>();
 			appAudioSink.connect(new AppSink.NEW_BUFFER() { 
 				public void newBuffer(AppSink sink) {
-					//System.out.println("Audio Frame");
+					Buffer b = sink.getLastBuffer();
+					if (b != null) {
+						audioQ.offer(new FrameInfo(System.currentTimeMillis(), b.getSize()));
+					}
 				} 
 			});
 			clientPipe.addMany(taud, qaud, appAudioSink);
@@ -266,7 +269,6 @@ public class Client {
 			public void newBuffer(AppSink sink) {
 				Buffer b = sink.getLastBuffer();
 				if (b != null) {
-					// NullPointerException on this line
 					videoQ.offer(new FrameInfo(System.currentTimeMillis(), b.getSize()));
 				}
 			} 
@@ -356,6 +358,16 @@ public class Client {
 		jointQ = new LinkedList<CompareInfo>();
 		appJointSink.connect(new AppSink.NEW_BUFFER() { 
 			public void newBuffer(AppSink sink) {
+				/*
+				int vs = 0; int as = 0;
+				while (videoQ != null) {
+					vs++; videoQ.poll();
+				}
+				while (audioQ != null) {
+					as++; audioQ.poll();
+				}
+				System.out.println("Compare: " + as + " : " + vs);
+				*/
 			} 
 		});
 		
