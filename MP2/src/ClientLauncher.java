@@ -315,15 +315,20 @@ public class ClientLauncher extends JFrame{
 	}
 	
 	private void scanResource() throws IOException {
-		String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-		String appPath = "";
-		if (somePath.indexOf('!') != -1) { // for jar files
-			appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
+		BufferedReader br = null;
+		String rscPath = "resource.txt";
+		try {
+			br = new BufferedReader(new FileReader(rscPath));
+		} catch (FileNotFoundException e1) {
+			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+			rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
+			try {
+				br = new BufferedReader(new FileReader(rscPath));
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		else { // running on eclipse
-			appPath = ""; // just use the local resource.txt
-		}
-		BufferedReader br = new BufferedReader(new FileReader(appPath + "resource.txt"));
 		try {
 			bandwidth = Integer.parseInt(br.readLine());
 		} catch (NumberFormatException e) {

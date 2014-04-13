@@ -386,18 +386,18 @@ public class Client {
 		if (clientPipe != null) {
 			int bandwidth = 0;
 			BufferedReader br = null;
+			String rscPath = "c_resource.txt";
 			try {
-				String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-				String rscPath = "";
-				if (somePath.indexOf('!') != -1) { // for jar files
-					rscPath = somePath.substring(0, somePath.indexOf('!')) + "c_resource.txt"; // find the local directory
-				}
-				else { // running on eclipse
-					rscPath = "resource.txt"; // just use the local resource.txt
-				}
 				br = new BufferedReader(new FileReader(rscPath));
 			} catch (FileNotFoundException e1) {
-				e1.printStackTrace();
+				String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+				rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
+				try {
+					br = new BufferedReader(new FileReader(rscPath));
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			try {
 				bandwidth = Integer.parseInt(br.readLine());
