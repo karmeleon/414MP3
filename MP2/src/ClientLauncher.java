@@ -31,7 +31,7 @@ public class ClientLauncher extends JFrame{
 	boolean connected = false;
 	VideoComponent vc;
 	JLabel mon1; JLabel mon2; JLabel mon3; JLabel mon4;
-	Timer monitor;
+	// Timer monitor;
 	// static JComboBox<String> netOption;
 	static JTextField netAddress;
 	
@@ -187,6 +187,7 @@ public class ClientLauncher extends JFrame{
 		});
 		
 		netAddress = new JTextField();
+		netAddress.setPreferredSize(new Dimension(200, 30));
 		ctrlPanel.add(netAddress);
 		
 		JPanel optPanel = new JPanel();
@@ -267,7 +268,7 @@ public class ClientLauncher extends JFrame{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			monitor.cancel();
+			// monitor.cancel();
 			return (playing = false);
 		}
 		

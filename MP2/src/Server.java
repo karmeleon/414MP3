@@ -72,12 +72,18 @@ public class Server {
 		
 		while(true) { // y = 2.4 * x + 240
 			try {
-				System.out.println("Waiting to recieve ...");
+				// System.out.println("Waiting to recieve ...");
 		        Socket skt = srvr.accept();
-		        System.out.println("Connected! ...");
-		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
-		        String clientLoc = skt.getRemoteSocketAddress().toString();
-		        if (opt == 1) clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
+		        // System.out.println("Connected! ...");
+		        String clientLoc = "";
+		        if (opt == 1) {
+		        	pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
+		        	clientLoc = skt.getRemoteSocketAddress().toString();
+			        clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
+		        }
+		        else if (opt == 0) {
+		        	clientLoc = "127.0.0.1";
+		        }
 		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt, currThread);
 		        thr.start();
 		        

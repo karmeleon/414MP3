@@ -20,6 +20,7 @@ import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
 import org.gstreamer.SeekFlags;
 import org.gstreamer.SeekType;
+import org.gstreamer.State;
 import org.gstreamer.Structure;
 import org.gstreamer.elements.DecodeBin2;
 import org.gstreamer.elements.good.RTPBin;
@@ -57,12 +58,14 @@ public class ServerInstance extends Thread {
 	        JSONObject portNeg = new JSONObject();
 	        portNeg.put("port", port);
 	        out.println(portNeg.toString());
+	        System.out.println("Server port: " + port);
 	        
 	        JSONObject json_settings = new JSONObject(in.readLine());
 	        String settings = json_settings.getString("settings");
 	        Server.pushLog("> (" + threadNum + ") SYS: REQ " + settings);
 			
 			Pipeline pb = startStreaming(settings);
+			if (pb.getState() == org.gstreamer.State.PLAYING) System.out.println("Server side OK!");
 	        
 	        // listen for commands
 	        JSONObject json_msg;

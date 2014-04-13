@@ -138,7 +138,8 @@ public class Client {
 
 	private static void connectAndPlay(VideoComponent vc, String settings, String addr) throws UnknownHostException, IOException {
 		// find this ip
-		if (addr.length() != 1) {
+		Socket skt = null;
+		if (addr.length() > 0) {
 			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
 			while(e.hasMoreElements())
 			{
@@ -154,21 +155,21 @@ public class Client {
 				}
 			}
 			serverLoc = addr;
+			skt = new Socket(serverLoc, 45000);
 		}
 		else if (addr.length() == 0) {
 			clientLoc = "127.0.0.1";
-			serverLoc = "localhost";
+			serverLoc = "127.0.0.1";
+			skt = new Socket("localhost", 45000);
 		}
 		
-		System.out.println("Waiting for accept...");
-		Socket skt = new Socket(serverLoc, 45000);
-		System.out.println("Connected! ...");
 		skt.setReuseAddress(true);
         BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
         out = new PrintWriter(skt.getOutputStream(), true);
 
         JSONObject portNeg = new JSONObject(in.readLine());
         int port = portNeg.getInt("port");
+        System.out.println("Client port: " + port);
         
         JSONObject json_settings = new JSONObject();
         json_settings.put("settings", settings);
@@ -203,6 +204,8 @@ public class Client {
 		pushLog("> CTRL: " + "PLAY");
 		pushLog("> SYS: " + " INIT STREAM");
 
+		System.out.println("Starting with: C=" + clientLoc + ", S=" + serverLoc);
+		
 		// VIDEO
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
 		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
