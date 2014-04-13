@@ -388,14 +388,14 @@ public class Client {
 			BufferedReader br = null;
 			try {
 				String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-				String appPath = "";
+				String rscPath = "";
 				if (somePath.indexOf('!') != -1) { // for jar files
-					appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
+					rscPath = somePath.substring(0, somePath.indexOf('!')) + "c_resource.txt"; // find the local directory
 				}
 				else { // running on eclipse
-					appPath = ""; // just use the local resource.txt
+					rscPath = "resource.txt"; // just use the local resource.txt
 				}
-				br = new BufferedReader(new FileReader(appPath + "resource.txt"));
+				br = new BufferedReader(new FileReader(rscPath));
 			} catch (FileNotFoundException e1) {
 				e1.printStackTrace();
 			}
