@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -7,6 +8,9 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.gstreamer.Bin;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
@@ -134,7 +138,16 @@ public class ServerInstance extends Thread {
 		serverPipe = new Pipeline();
 		
 		Element filesrc = ElementFactory.make("filesrc", "src");
-		filesrc.set("location", "videos/" + resolution + ".mp4");
+		
+		File vidFile = new File("videos");
+		if (vidFile.exists()) {
+			filesrc.set("location", "videos/" + resolution + ".mp4");
+		}
+		else {
+			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+			String currPath = somePath.substring(0, somePath.indexOf("server")); // find the local directory
+			filesrc.set("location", currPath + "videos/" + resolution + ".mp4");
+		}
 		
 		DecodeBin2 decode = new DecodeBin2("decode");
 		
