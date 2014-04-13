@@ -17,6 +17,7 @@ public class ServerLauncher extends JFrame {
 	JButton startButton;
 	ServerLauncher serverGUI;
 	static JPanel ctrlPanel;
+	static JComboBox<String> netOption;
 	
 	public ServerLauncher() {
 		super("Server");
@@ -51,7 +52,7 @@ public class ServerLauncher extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				Thread serverThread = new Thread() {
 					public void run() {
-						Server.startServer(textArea);
+						Server.startServer(textArea, netOption.getSelectedIndex()); // 0 - LAN ;; 1 - INET
 					}
 				};
 				serverThread.start();
@@ -60,6 +61,11 @@ public class ServerLauncher extends JFrame {
 			}
 		});
 		ctrlPanel.add(startButton);
+		
+		String[] netSettings = {"LAN", "INET"};
+		netOption = new JComboBox<String>(netSettings);
+		netOption.setPreferredSize(new Dimension(95,30));
+		ctrlPanel.add(netOption);
 		
 		textArea = new JTextArea();
 		scrollPane = new JScrollPane(textArea);

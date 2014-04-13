@@ -44,9 +44,9 @@ public class Client {
 	static Queue<CompareInfo> jointQ;
 	
 	static String clientLoc;
-	static String serverLoc = "130.126.210.236";
+	static String serverLoc = "localhost";
 	
-	public static void handleRequest(VideoComponent vc, String settings, JTextArea log) throws UnknownHostException, IOException {
+	public static void handleRequest(VideoComponent vc, String settings, JTextArea log, String addr) throws UnknownHostException, IOException {
 		textArea = log;
 		
 		String[] s = settings.split(" ");
@@ -60,7 +60,7 @@ public class Client {
 			// Pause -> nothing
 			// Stop -> Nothing
 			if (request.equalsIgnoreCase("play")) {
-				connectAndPlay(vc, settings);
+				connectAndPlay(vc, settings, addr);
 				videoQ = new LinkedList<FrameInfo>();
 				audioQ = new LinkedList<FrameInfo>();
 				jointQ = new LinkedList<CompareInfo>();
@@ -136,23 +136,33 @@ public class Client {
 		out.println(json_pause.toString());
 	}
 
-	private static void connectAndPlay(VideoComponent vc, String settings) throws UnknownHostException, IOException {
+	private static void connectAndPlay(VideoComponent vc, String settings, String addr) throws UnknownHostException, IOException {
 		// find this ip
-		Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
-		while(e.hasMoreElements())
-		{
-			NetworkInterface n = (NetworkInterface) e.nextElement();
-			Enumeration<InetAddress> ee = n.getInetAddresses();
-			while (ee.hasMoreElements())
+		if (addr.length() != 1) {
+			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
+			while(e.hasMoreElements())
 			{
-				InetAddress i = (InetAddress) ee.nextElement();
-				if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
-					pushLog("CLNT START IP:" + i.getHostAddress());
-				    clientLoc = i.getHostAddress();
+				NetworkInterface n = (NetworkInterface) e.nextElement();
+				Enumeration<InetAddress> ee = n.getInetAddresses();
+				while (ee.hasMoreElements())
+				{
+					InetAddress i = (InetAddress) ee.nextElement();
+					if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
+						pushLog("CLNT START IP:" + i.getHostAddress());
+					    clientLoc = i.getHostAddress();
+					}
 				}
 			}
+			serverLoc = addr;
 		}
+		else if (addr.length() == 0) {
+			clientLoc = "127.0.0.1";
+			serverLoc = "localhost";
+		}
+		
+		System.out.println("Waiting for accept...");
 		Socket skt = new Socket(serverLoc, 45000);
+		System.out.println("Connected! ...");
 		skt.setReuseAddress(true);
         BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
         out = new PrintWriter(skt.getOutputStream(), true);

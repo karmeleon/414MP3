@@ -32,6 +32,8 @@ public class ClientLauncher extends JFrame{
 	VideoComponent vc;
 	JLabel mon1; JLabel mon2; JLabel mon3; JLabel mon4;
 	Timer monitor;
+	// static JComboBox<String> netOption;
+	static JTextField netAddress;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
@@ -132,7 +134,7 @@ public class ClientLauncher extends JFrame{
 						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth + " forward";
 				try {
-					Client.handleRequest(vc, settings, textArea);
+					Client.handleRequest(vc, settings, textArea, netAddress.getText()); // 0 - LAN ;; 1 - INET
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -148,7 +150,7 @@ public class ClientLauncher extends JFrame{
 						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth + " rewind";
 				try {
-					Client.handleRequest(vc, settings, textArea);
+					Client.handleRequest(vc, settings, textArea, netAddress.getText());
 				} catch (IOException e1) {
 					e1.printStackTrace();
 				}
@@ -174,7 +176,7 @@ public class ClientLauncher extends JFrame{
 						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth + " stop";
 				try {
-					Client.handleRequest(vc, settings, textArea);
+					Client.handleRequest(vc, settings, textArea, netAddress.getText());
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -183,6 +185,9 @@ public class ClientLauncher extends JFrame{
 				buttons.get("Play").setText("Play");
 			}
 		});
+		
+		netAddress = new JTextField();
+		ctrlPanel.add(netAddress);
 		
 		JPanel optPanel = new JPanel();
 		optPanel.setPreferredSize(new Dimension(200,30));
@@ -228,7 +233,7 @@ public class ClientLauncher extends JFrame{
 							+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 							+ " " + bandwidth + " play";
 					try {
-						Client.handleRequest(vc, settings, textArea);
+						Client.handleRequest(vc, settings, textArea, netAddress.getText());
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -258,7 +263,7 @@ public class ClientLauncher extends JFrame{
 					+ " " + actCombo.getSelectedItem()
 					+ " " + bandwidth + " pause";
 			try {
-				Client.handleRequest(vc, settings, textArea);
+				Client.handleRequest(vc, settings, textArea, netAddress.getText());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

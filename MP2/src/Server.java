@@ -25,36 +25,43 @@ public class Server {
 	
 	static String serverLoc;
 	
-	public static void startServer(JTextArea log) {
+	public static void startServer(JTextArea log, int opt) { // 0 - LAN ;; 1 - INET
 		textArea = log;
 		
 		log.setText("");
 		pushLog("> CTRL: Starting Server ...");
 		InetAddress inet = null;
 		// find this ip
-		Enumeration<NetworkInterface> e = null;
-		try {
-			e = NetworkInterface.getNetworkInterfaces();
-		} catch (SocketException e3) {
-			e3.printStackTrace();
-		}
-		while(e.hasMoreElements())
-		{
-			NetworkInterface n = (NetworkInterface) e.nextElement();
-			Enumeration<InetAddress> ee = n.getInetAddresses();
-			while (ee.hasMoreElements())
+		if (opt == 1) {
+			Enumeration<NetworkInterface> e = null;
+			try {
+				e = NetworkInterface.getNetworkInterfaces();
+			} catch (SocketException e3) {
+				e3.printStackTrace();
+			}
+			while(e.hasMoreElements())
 			{
-				InetAddress i = (InetAddress) ee.nextElement();
-				if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
-					pushLog("SRVR START IP:" + i.getHostAddress());
-				    serverLoc = i.getHostAddress();
-				    inet = i;
+				NetworkInterface n = (NetworkInterface) e.nextElement();
+				Enumeration<InetAddress> ee = n.getInetAddresses();
+				while (ee.hasMoreElements())
+				{
+					InetAddress i = (InetAddress) ee.nextElement();
+					if(!i.isLinkLocalAddress() && !i.isLoopbackAddress()) {
+						pushLog("SRVR START IP:" + i.getHostAddress());
+					    serverLoc = i.getHostAddress();
+					    inet = i;
+					}
 				}
 			}
 		}
+		else if (opt == 0) {
+			serverLoc = "127.0.0.1";
+		}
+		
 		ServerSocket srvr = null;
 		try {
-			srvr = new ServerSocket(45000, 1, inet);
+			if (opt == 1) srvr = new ServerSocket(45000, 1, inet);
+			else if (opt == 0) srvr = new ServerSocket(45000);
 			srvr.setReuseAddress(true);
 		} catch (IOException e2) {
 			e2.printStackTrace();
@@ -65,11 +72,12 @@ public class Server {
 		
 		while(true) { // y = 2.4 * x + 240
 			try {
+				System.out.println("Waiting to recieve ...");
 		        Socket skt = srvr.accept();
+		        System.out.println("Connected! ...");
 		        pushLog("> SYS: CNCT FROM " + skt.getRemoteSocketAddress().toString());
 		        String clientLoc = skt.getRemoteSocketAddress().toString();
-		        clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
-		        
+		        if (opt == 1) clientLoc = clientLoc.substring(1, clientLoc.indexOf(":"));
 		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt, currThread);
 		        thr.start();
 		        
