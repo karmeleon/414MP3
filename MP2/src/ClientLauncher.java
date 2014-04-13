@@ -2,6 +2,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.Socket;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
@@ -273,13 +274,16 @@ public class ClientLauncher extends JFrame{
 						int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
 						
 						mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
-						mon2.setText("" + (vtimeAVG - atimeAVG));
+						// DecimalFormat df = new DecimalFormat("0.00##");
+						// String restime = df.format(vtimeAVG - atimeAVG);
+						int skew = (int) (vtimeAVG - atimeAVG);
+						if (skew > 10000) skew = 0;
+						mon2.setText("" + skew);
 					}
 					else {
 						if (Client.videoQ != null && Client.videoQ.size() > 0) {
 							vcount = Client.videoQ.size();
 							while (Client.videoQ.peek() != null) {
-								// mon1.setText("" + Client.videoQ.peek().getFrameSize());
 								vsizesum+= Client.videoQ.peek().getFrameSize();
 								vtimesum+= Client.videoQ.peek().getFrameTime();
 								Client.videoQ.poll();
