@@ -167,20 +167,21 @@ public class ServerInstance extends Thread {
 		
 		if(attribute.equalsIgnoreCase("active")) {
 			Element audRate = ElementFactory.make("audioresample", "audiorate");
-			audRate.setCaps(Caps.fromString("audio/x-raw-int, rate=8000"));
+			Element audCaps = ElementFactory.make("capsfilter", "audcaps");
+			audCaps.setCaps(Caps.fromString("audio/x-raw-int, rate=8000"));
 			Element audConv = ElementFactory.make("audioconvert", "audioconv");
 	        Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
 	        
-	        audioBin.addMany(audRate, audConv, audPayload);
-	        Element.linkMany(audRate, audConv, audPayload);
+	        audioBin.addMany(audRate, audCaps, audConv, audPayload);
+	        Element.linkMany(audRate, audCaps, audConv, audPayload);
 	        audioBin.addPad(new GhostPad("sink", audRate.getStaticPad("sink")));
 	        audioBin.addPad(new GhostPad("src", audPayload.getStaticPad("src")));
 	        serverPipe.add(audioBin);
 		}
-        decode.connect(new DecodeBin2.NEW_DECODED_PAD() {
+        decode.connect(new Element.PAD_ADDED() {
 			
 			@Override
-			public void newDecodedPad(DecodeBin2 elem, Pad pad, boolean last) {
+			public void padAdded(Element elem, Pad pad) {
 				if(pad.isLinked())
 					return;
 				
@@ -190,8 +191,7 @@ public class ServerInstance extends Thread {
 					pad.link(audioBin.getStaticPad("sink"));
 				} else if(struct.getName().startsWith("video/")) {
 					pad.link(videoBin.getStaticPad("sink"));
-				} else {
-				}
+				} else {}
 			}
 		});
 		

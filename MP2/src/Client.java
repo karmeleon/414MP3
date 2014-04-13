@@ -227,7 +227,7 @@ public class Client {
 		if(attribute.equalsIgnoreCase("active")) {
 			// AUDIO
 			udpAudioSrc = ElementFactory.make("udpsrc", "src2");
-			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)44100, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)8000, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
 			udpAudioSrc.set("uri", "udp://" + clientLoc +":" + (port + 2));
 			
 			taud = ElementFactory.make("tee", "taud");
