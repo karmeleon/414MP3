@@ -31,7 +31,7 @@ public class ClientLauncher extends JFrame{
 	boolean connected = false;
 	VideoComponent vc;
 	JLabel mon1; JLabel mon2; JLabel mon3; JLabel mon4;
-	// Timer monitor;
+	Timer monitor;
 	// static JComboBox<String> netOption;
 	static JTextField netAddress;
 	
@@ -59,7 +59,7 @@ public class ClientLauncher extends JFrame{
 		
 		List<JLabel> datalabels = new ArrayList<JLabel>();
 		
-		JLabel lctime = new JLabel("Acceptance Rate: ");// "<html>Text color: <font color='red'>red</font></html>"
+		JLabel lctime = new JLabel("Incoming Bandwidth: ");// "<html>Text color: <font color='red'>red</font></html>"
 		datalabels.add(lctime);
 		JLabel ldtime = new JLabel("Synchronization Skew: ");
 		datalabels.add(ldtime);
@@ -243,20 +243,22 @@ public class ClientLauncher extends JFrame{
 			};
 			clientThread.start();
 			/*
-			rectimer = new Timer();
-			rectimer.scheduleAtFixedRate(new TimerTask() {
+			monitor = new Timer();
+			monitor.scheduleAtFixedRate(new TimerTask() {
 				public void run() {
 					// List<Long> data = new ArrayList<Long>();
-					while(pipe.getQueue1().peek() != null && pipe.getQueue2().peek() != null) {
-						tctime.setText((""+ (pipe.getQueue2().peek().getFrameTime() - pipe.getQueue1().peek().getFrameTime())));
-						tfsize.setText("" + pipe.getQueue2().peek().getFrameSize());
-						tcratio.setText(""+ pipe.getQueue2().peek().getFrameSize() / (double) pipe.getQueue1().peek().getFrameSize());
-						pipe.getQueue1().poll();
-						pipe.getQueue2().poll();
+					if (Client.videoQ != null) {
+						if (Client.videoQ.peek() != null) {
+							while (Client.videoQ.peek() != null) {
+								mon1.setText("" + Client.videoQ.peek().getFrameSize());
+								Client.videoQ.poll();
+							}
+						}
 					}
 				}
 			}, 0, 25);
 			*/
+			
 			return (playing = true);
 		}
 		else { // if (playing)

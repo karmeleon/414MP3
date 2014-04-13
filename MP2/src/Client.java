@@ -14,7 +14,9 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Scanner;
 import javax.swing.JTextArea;
+
 import org.gstreamer.Bin;
+import org.gstreamer.Buffer;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
 import org.gstreamer.Element;
@@ -260,7 +262,11 @@ public class Client {
 		appVideoSink.setSync(false);
 		appVideoSink.connect(new AppSink.NEW_BUFFER() { 
 			public void newBuffer(AppSink sink) {
-				//System.out.println("Video Frame");
+				Buffer b = sink.getLastBuffer();
+				if (b != null) {
+					// NullPointerException on this line
+					// videoQ.offer(new FrameInfo(System.currentTimeMillis(), b.getSize()));
+				}
 			} 
 		});
 		clientPipe.addMany(tvid, qvid, appVideoSink);
