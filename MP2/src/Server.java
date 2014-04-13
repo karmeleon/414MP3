@@ -1,9 +1,13 @@
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 
 import javax.swing.JTextArea;
@@ -19,14 +23,18 @@ public class Server {
 	static boolean closeResourceInfoStream = true;
 	static JTextArea textArea = null;
 	static boolean seeking = false;
-	static int serverbw = 0;
+	static int serverBW = 0;
 	static String resolution = "";
 	static Pipeline serverPipe = null;
 	
 	static String serverLoc;
+	static ArrayList<ServerInstance> instances;
 	
 	public static void startServer(JTextArea log, int opt) { // 0 - LAN ;; 1 - INET
 		textArea = log;
+		
+		instances = new ArrayList<ServerInstance>();
+		updateResource();
 		
 		log.setText("");
 		pushLog("> CTRL: Starting Server ...");
@@ -85,6 +93,7 @@ public class Server {
 		        	clientLoc = "127.0.0.1";
 		        }
 		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt, currThread);
+		        instances.add(thr);
 		        thr.start();
 		        
 		        currentPort += 10;
@@ -92,6 +101,46 @@ public class Server {
 		        
 			} catch(Exception e1) {
 				e1.printStackTrace();
+			}
+		}
+	}
+	
+	public static void updateResource() {
+		int bandwidth = 0;
+		BufferedReader br = null;
+		try {
+			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+			String appPath = "";
+			if (somePath.indexOf('!') != -1) { // for jar files
+				appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
+			}
+			else { // running on eclipse
+				appPath = ""; // just use the local resource.txt
+			}
+			br = new BufferedReader(new FileReader(appPath + "resource.txt"));
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		try {
+			bandwidth = Integer.parseInt(br.readLine());
+		} catch (NumberFormatException e) {
+		} catch (IOException e) {
+		}
+		try {
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		serverBW = bandwidth;
+        negotiateAll();
+	}
+	
+	public static void negotiateAll() {
+		for (int i = 0; i < instances.size(); i++) {
+			ServerInstance si = instances.get(i);
+			if (si != null && si.serverPipe != null && si.serverPipe.getState() != org.gstreamer.State.NULL) {
+				si.negotiate();
 			}
 		}
 	}

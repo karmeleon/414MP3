@@ -55,7 +55,6 @@ public class ClientLauncher extends JFrame{
 		dataPanel.setPreferredSize(new Dimension(1200, 30));
 		dataPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		dataPanel.setBackground(new Color(0,0,0));
-		mainContainer.add(dataPanel);
 		
 		List<JLabel> datalabels = new ArrayList<JLabel>();
 		
@@ -208,6 +207,8 @@ public class ClientLauncher extends JFrame{
 		JScrollPane scrollPane = new JScrollPane(textArea);
 		scrollPane.setPreferredSize(new Dimension(1200, 100));
 		mainContainer.add(scrollPane);
+		
+		mainContainer.add(dataPanel);
 		
 		pushLog("Starting Client...");
 		setVisible(true);

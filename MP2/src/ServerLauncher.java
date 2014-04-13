@@ -37,13 +37,11 @@ public class ServerLauncher extends JFrame {
 		
 		JButton rsrcButton = new JButton("Refresh");
 		rsrcButton.setMargin(new Insets(0,0,0,0));
-		/*
 		rsrcButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Server.updateResource();
 			}
 		});
-		*/
 		ctrlPanel.add(rsrcButton);
 		
 		startButton = new JButton("Start");

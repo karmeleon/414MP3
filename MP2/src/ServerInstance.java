@@ -20,7 +20,6 @@ import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
 import org.gstreamer.SeekFlags;
 import org.gstreamer.SeekType;
-import org.gstreamer.State;
 import org.gstreamer.Structure;
 import org.gstreamer.elements.DecodeBin2;
 import org.gstreamer.elements.good.RTPBin;
@@ -33,11 +32,11 @@ public class ServerInstance extends Thread {
 	private String serverLoc, clientLoc;
 	private int port;
 	private Socket skt;
-	private int clientbw;
-	private int serverbw;
+	private int clientBW;
 	private boolean seeking;
-	private Pipeline serverPipe;
+	public Pipeline serverPipe;
 	private int threadNum;
+	private Element videorate;
 	
 	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num) {
 		serverLoc = serverIP;
@@ -50,8 +49,6 @@ public class ServerInstance extends Thread {
 	public void run() {
 		Server.pushLog("> (" + threadNum + ") NEW THREAD FOR CLIENT " + clientLoc);
 		try {
-			updateResource();
-			
 			BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
 	        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
 	        
@@ -83,9 +80,9 @@ public class ServerInstance extends Thread {
 	        	String command = json_msg.getString("command");
 	        	
 	        	try {
-	        		clientbw = Integer.parseInt(command);
+	        		clientBW = Integer.parseInt(command);
 	        		Bin videoBin = (Bin) pb.getElementByName("VideoBin");
-	        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
+	        		negotiate();
 	        	} catch(Exception ex) {
 	        		// this isn't an fps command, ignore it here
 	        	}
@@ -131,7 +128,7 @@ public class ServerInstance extends Thread {
 		String[] s = settings.split(" ");
 		resolution = s[0];          // 240p/480p
 		final String attribute = s[1];     // Passive/Active
-		clientbw = Integer.parseInt(s[2]); // Some amount
+		clientBW = Integer.parseInt(s[2]); // Some amount
 		Gst.init();
 		
 		serverPipe = new Pipeline();
@@ -143,15 +140,14 @@ public class ServerInstance extends Thread {
 		
 		final Bin videoBin = new Bin("VideoBin");
 		
-		Element videorate = ElementFactory.make("videorate", "rate");
+		videorate = ElementFactory.make("videorate", "rate");
 		
 		/** asdf set fps here **/
-		videorate.set("force-fps", "" + clientbw);
 		if(attribute.equalsIgnoreCase("passive")) {
 			videorate.set("force-fps", "10");
 		}
 		else {
-			negotiate(videorate, clientbw, serverbw);
+			negotiate();
 		}
 		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
@@ -265,7 +261,7 @@ public class ServerInstance extends Thread {
         return serverPipe;
 	}
 	
-	public void negotiate(Element videorate,  int cbw, int sbw) {
+	public void negotiate() {
 		// kilobits per second
 		// 720 - 1000 kbps -> 30fps
 		// 480 - 750 kbps -> 30fps
@@ -275,54 +271,17 @@ public class ServerInstance extends Thread {
 		int res = Integer.parseInt(resolution.substring(0, 3));
 		int setfps = 0;
 		if (res == 720)
-			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 1000.0)));
+			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 1000.0)));
 		if (res == 480)
-			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 750.0)));
+			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 750.0)));
 		if (res == 360)
-			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 500.0)));
+			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 500.0)));
 		if (res == 240)
-			setfps = Math.min((int) cap, Math.min((int) (serverbw * cap / 1000.0), (int) (clientbw * cap / 250.0)));
-		videorate.set("force-fps", "" + setfps);
-		if (Server.textArea != null)
-			Server.pushLog("> (" + threadNum + ") SYS: NEGT FPS " + setfps);
-	}
-	
-	public void updateResource() {
-		int bandwidth = 0;
-		BufferedReader br = null;
-		try {
-			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-			String appPath = "";
-			if (somePath.indexOf('!') != -1) { // for jar files
-				appPath = somePath.substring(0, somePath.indexOf('!')); // find the local directory
-			}
-			else { // running on eclipse
-				appPath = ""; // just use the local resource.txt
-			}
-			br = new BufferedReader(new FileReader(appPath + "resource.txt"));
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
+			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 250.0)));
+		if (serverPipe != null) {
+			videorate.set("force-fps", "" + setfps);
+			if (Server.textArea != null)
+				Server.pushLog("> (" + threadNum + ") SYS: NEGT FPS " + setfps);
 		}
-		try {
-			bandwidth = Integer.parseInt(br.readLine());
-		} catch (NumberFormatException e) {
-		} catch (IOException e) {
-		}
-		try {
-			br.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		serverbw = bandwidth;
-        if (Server.textArea != null)
-        	Server.pushLog("> (" + threadNum + ") RSRC: SET BW " + bandwidth);
-        
-        if (serverPipe != null) {
-        	if (serverPipe.getState() != org.gstreamer.State.NULL) {
-        		Bin videoBin = (Bin) serverPipe.getElementByName("VideoBin");
-        		negotiate(videoBin.getElementByName("rate"), clientbw, serverbw);
-        	}
-        }
 	}
 }
