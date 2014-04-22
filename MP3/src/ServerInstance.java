@@ -139,9 +139,30 @@ public class ServerInstance extends Thread {
 		
 		final Bin videoBin = new Bin("VideoBin");
 		
+		// camera input
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
+		Element videoColors = ElementFactory.make("ffmpegcolorspace", "vidcolors");
 		Element videoCaps = ElementFactory.make("capsfilter", "vidcaps");
-		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,framerate=30/1"));
+		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,format=(fourcc)AYUV"));
+		
+		// image input
+		Element imgSrc = ElementFactory.make("multifilesrc", "imgsrc");
+		imgSrc.set("location", "shitty.png");
+		//imgSrc.set("caps", "image/png,framerate=1/1");
+		Element imgDec = ElementFactory.make("pngdec", "imgdec");
+		Element imgColors = ElementFactory.make("ffmpegcolorspace", "testcolors");
+		Element imgCaps = ElementFactory.make("capsfilter", "imgfilter");
+		imgCaps.setCaps(Caps.fromString("video/x-raw-yuv,format=(fourcc)AYUV"));
+		//Element imgScale = ElementFactory.make("videoscale", "testscale");
+		//Element imgFrz = ElementFactory.make("imagefreeze", "imgfrz");
+		
+		// mixer
+		Element vidMix = ElementFactory.make("videomixer", "vidmix");
+		
+		videoBin.addMany(videoSrc, videoColors, videoCaps, imgSrc, imgDec, imgColors, imgCaps, vidMix);
+		Element.linkMany(videoSrc, videoColors, videoCaps, vidMix);
+		Element.linkMany(imgSrc, imgDec, imgColors, imgCaps, vidMix);
+		
 		
 		videorate = ElementFactory.make("videorate", "rate");
 		
@@ -152,12 +173,12 @@ public class ServerInstance extends Thread {
 		else {
 			negotiate();
 		}
-		
+		Element fuckyou = ElementFactory.make("ffmpegcolorspace", "fuck");
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
-		videoBin.addMany(videoSrc, videoCaps, videorate, videoenc, videopay);
-		Element.linkMany(videoSrc, videoCaps, videorate, videoenc, videopay);
+		videoBin.addMany(fuckyou, videorate, videoenc, videopay);
+		Element.linkMany(vidMix, fuckyou, videorate, videoenc, videopay);
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
 		serverPipe.add(videoBin);
 		
