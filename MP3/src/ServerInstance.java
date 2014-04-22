@@ -139,7 +139,25 @@ public class ServerInstance extends Thread {
 		
 		final Bin videoBin = new Bin("VideoBin");
 		
+		// camera input
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
+		Element videoColors = ElementFactory.make("ffmpegcolorspace", "vidcolors");
+		Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
+		videoOverlay.set("fit-to-frame", "true");
+		videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"shitty.png\" /></svg>");
+		Element videoColors2 = ElementFactory.make("ffmpegcolorspace", "vidcolors2");
+		Element videoScale = ElementFactory.make("videoscale", "vidscale");
+		Element videoCaps = ElementFactory.make("capsfilter", "vidcaps");
+		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,width=640,height=480"));
+		Element videoColors3 = ElementFactory.make("ffmpegcolorspace", "vidcolors3");
+		
+		// image input
+		
+		// mixer
+		
+		videoBin.addMany(videoSrc, videoColors, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3);
+		Element.linkMany(videoSrc, videoColors, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3);
+		
 		
 		videorate = ElementFactory.make("videorate", "rate");
 		
@@ -150,12 +168,12 @@ public class ServerInstance extends Thread {
 		else {
 			negotiate();
 		}
-		
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
+		videoenc.set("quality", "95");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
-		videoBin.addMany(videoSrc, videorate, videoenc, videopay);
-		Element.linkMany(videoSrc, videorate, videoenc, videopay);
+		videoBin.addMany(videorate, videoenc, videopay);
+		Element.linkMany(videoColors3,videorate, videoenc, videopay);
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
 		serverPipe.add(videoBin);
 		
