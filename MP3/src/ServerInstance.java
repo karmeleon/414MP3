@@ -137,21 +137,9 @@ public class ServerInstance extends Thread {
 		
 		serverPipe = new Pipeline();
 		
-		Element filesrc = ElementFactory.make("filesrc", "src");
-		
-		File vidFile = new File("videos");
-		if (vidFile.exists()) {
-			filesrc.set("location", "videos/" + resolution + ".mp4");
-		}
-		else {
-			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-			String currPath = somePath.substring(0, somePath.indexOf("server")); // find the local directory
-			filesrc.set("location", currPath + "videos/" + resolution + ".mp4");
-		}
-		
-		DecodeBin2 decode = new DecodeBin2("decode");
-		
 		final Bin videoBin = new Bin("VideoBin");
+		
+		Element videoSrc = ElementFactory.make("v4l2src", "cam");
 		
 		videorate = ElementFactory.make("videorate", "rate");
 		
@@ -166,46 +154,26 @@ public class ServerInstance extends Thread {
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
-		videoBin.addMany(videorate, videoenc, videopay);
-		Element.linkMany(videorate, videoenc, videopay);
-		videoBin.addPad(new GhostPad("sink", videorate.getStaticPad("sink")));
+		videoBin.addMany(videoSrc, videorate, videoenc, videopay);
+		Element.linkMany(videoSrc, videorate, videoenc, videopay);
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
 		serverPipe.add(videoBin);
 		
 		final Bin audioBin = new Bin("AudioBin");
 		
 		if(attribute.equalsIgnoreCase("active")) {
+			Element audSrc = ElementFactory.make("alsasrc", "audsrc");
 			Element audRate = ElementFactory.make("audioresample", "audiorate");
 			Element audCaps = ElementFactory.make("capsfilter", "audcaps");
 			audCaps.setCaps(Caps.fromString("audio/x-raw-int, rate=8000"));
 			Element audConv = ElementFactory.make("audioconvert", "audioconv");
 	        Element audPayload = ElementFactory.make("rtpL16pay", "audpay");
 	        
-	        audioBin.addMany(audRate, audCaps, audConv, audPayload);
-	        Element.linkMany(audRate, audCaps, audConv, audPayload);
-	        audioBin.addPad(new GhostPad("sink", audRate.getStaticPad("sink")));
+	        audioBin.addMany(audSrc, audRate, audCaps, audConv, audPayload);
+	        Element.linkMany(audSrc, audRate, audCaps, audConv, audPayload);
 	        audioBin.addPad(new GhostPad("src", audPayload.getStaticPad("src")));
 	        serverPipe.add(audioBin);
 		}
-        decode.connect(new Element.PAD_ADDED() {
-			
-			@Override
-			public void padAdded(Element elem, Pad pad) {
-				if(pad.isLinked())
-					return;
-				
-				Caps caps = pad.getCaps();
-				Structure struct = caps.getStructure(0);
-				if(struct.getName().startsWith("audio/") && attribute.equalsIgnoreCase("active")) {
-					pad.link(audioBin.getStaticPad("sink"));
-				} else if(struct.getName().startsWith("video/")) {
-					pad.link(videoBin.getStaticPad("sink"));
-				} else {}
-			}
-		});
-		
-        serverPipe.addMany(filesrc, decode);
-		Element.linkMany(filesrc, decode);
 		
 		RTPBin rtp = new RTPBin("rtp");
 		serverPipe.add(rtp);
