@@ -140,6 +140,8 @@ public class ServerInstance extends Thread {
 		final Bin videoBin = new Bin("VideoBin");
 		
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
+		Element videoCaps = ElementFactory.make("capsfilter", "vidcaps");
+		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,framerate=30/1"));
 		
 		videorate = ElementFactory.make("videorate", "rate");
 		
@@ -154,8 +156,8 @@ public class ServerInstance extends Thread {
 		Element videoenc = ElementFactory.make("jpegenc", "vencoder");
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
-		videoBin.addMany(videoSrc, videorate, videoenc, videopay);
-		Element.linkMany(videoSrc, videorate, videoenc, videopay);
+		videoBin.addMany(videoSrc, videoCaps, videorate, videoenc, videopay);
+		Element.linkMany(videoSrc, videoCaps, videorate, videoenc, videopay);
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
 		serverPipe.add(videoBin);
 		
@@ -238,6 +240,7 @@ public class ServerInstance extends Thread {
         });
         
         serverPipe.play();
+        serverPipe.debugToDotFile(1, "camsvr");
         //Gst.main();
         return serverPipe;
 	}
