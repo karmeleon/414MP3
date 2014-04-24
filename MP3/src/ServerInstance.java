@@ -87,7 +87,7 @@ public class ServerInstance extends Thread {
 	        	int amount = 0;
 	        	
 	        	try {
-	        		amount = Integer.parseInt(json_msg.getString("amount"));
+	        		amount = json_msg.getInt("amount");
 	        	} catch (Exception ex) {
 	        		// this isn't a camera movement command, ignore it
 	        	}
