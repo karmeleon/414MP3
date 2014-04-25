@@ -29,6 +29,8 @@ import org.gstreamer.elements.DecodeBin2;
 import org.gstreamer.elements.good.RTPBin;
 import org.json.JSONObject;
 
+import au.edu.jcu.v4l4j.VideoDevice;
+
 
 public class ServerInstance extends Thread {
 
@@ -82,6 +84,14 @@ public class ServerInstance extends Thread {
 	        	
 	        	json_msg = new JSONObject(nextMsg);
 	        	String command = json_msg.getString("command");
+	        	int amount = 0;
+	        	
+	        	try {
+	        		amount = json_msg.getInt("amount");
+	        	} catch (Exception ex) {
+	        		// this isn't a camera movement command, ignore it
+	        	}
+	        	
 	        	
 	        	try {
 	        		clientBW = Integer.parseInt(command);
@@ -114,7 +124,24 @@ public class ServerInstance extends Thread {
 	        		seeking = true;
 	        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
 	        		break;
-	        	default :
+	        	case "reset":
+	        		VideoDevice vid = new VideoDevice("/dev/video0");
+	        		vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
+	        		vid.releaseControlList();
+	        		vid.release();
+	        	case "pan":
+	        		VideoDevice vd = new VideoDevice("/dev/video0");
+	        		vd.getControlList().getControl("Pan (relative)").setValue(amount);
+	        		vd.releaseControlList();
+	        		vd.release();
+	        		break;
+	        	case "tilt":
+	        		VideoDevice vde = new VideoDevice("/dev/video0");
+	        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+	        		vde.releaseControlList();
+	        		vde.release();
+	        		break;
+	        	default:
 	        		break;
 	        	}
 	        }
