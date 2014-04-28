@@ -1,5 +1,6 @@
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
 import java.text.DecimalFormat;
@@ -7,6 +8,7 @@ import java.util.*;
 import java.util.List;
 import java.util.Timer;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 
 import org.gstreamer.Gst;
@@ -46,9 +48,9 @@ public class ClientLauncher extends JFrame{
 		buttons = new HashMap<String, JButton>();
 		
 		JPanel mainContainer = new JPanel();
-		mainContainer.setPreferredSize(new Dimension(120, 800));
+		mainContainer.setPreferredSize(new Dimension(1200, 800));
 		mainContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
-		// mainContainer.setBackground(new Color(255,255,0));
+		mainContainer.setBackground(new Color(255,255,0));
 		getContentPane().add(mainContainer);
 		
 		JPanel dataPanel = new JPanel();
@@ -95,7 +97,7 @@ public class ClientLauncher extends JFrame{
 		}
 		
 		videoPanel = new JPanel();
-		videoPanel.setPreferredSize(new Dimension(1200, 640));
+		videoPanel.setPreferredSize(new Dimension(1000, 640));
 		videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		videoPanel.setBackground(new Color(0,0,0));
 		mainContainer.add(videoPanel);
@@ -104,6 +106,64 @@ public class ClientLauncher extends JFrame{
 		vc.setPreferredSize(new Dimension(1200, 640));
 		vc.setBackground(Color.green);
 		videoPanel.add(vc);
+		
+		JPanel controlPanel = new JPanel();
+		controlPanel.setBackground(Color.DARK_GRAY);
+		controlPanel.setPreferredSize(new Dimension(200,640));
+		mainContainer.add(controlPanel);
+		
+		JPanel spacer = new JPanel();
+		spacer.setBackground(Color.darkGray);
+		spacer.setPreferredSize(new Dimension(200,300));
+		controlPanel.add(spacer);
+		
+		ImagePanel dpad = new ImagePanel("dpad.png");
+		dpad.setPreferredSize(new Dimension(160,160));
+		dpad.setBackground(Color.DARK_GRAY);
+		controlPanel.add(dpad);
+		
+		JButton upButton = new JButton("A");
+		upButton.setContentAreaFilled(false);
+		upButton.setBorderPainted(false);
+		upButton.setOpaque(false);
+		upButton.setForeground(Color.white);
+		dpad.add(upButton);
+		
+		JPanel a = new JPanel(); a.setPreferredSize(new Dimension(160,24)); dpad.add(a);
+		a.setOpaque(false);
+		
+		JButton leftButton = new JButton("<");
+		leftButton.setContentAreaFilled(false);
+		leftButton.setBorderPainted(false);
+		leftButton.setOpaque(false);
+		leftButton.setForeground(Color.white);
+		dpad.add(leftButton);
+		
+		JPanel b = new JPanel(); b.setPreferredSize(new Dimension(50,24)); dpad.add(b);
+		b.setOpaque(false);
+		
+		JButton rightButton = new JButton(">");
+		rightButton.setContentAreaFilled(false);
+		rightButton.setBorderPainted(false);
+		rightButton.setOpaque(false);
+		rightButton.setForeground(Color.white);
+		dpad.add(rightButton);
+		
+		JPanel c = new JPanel(); c.setPreferredSize(new Dimension(160,24)); dpad.add(c);
+		c.setOpaque(false);
+		
+		JButton downButton = new JButton("V");
+		downButton.setContentAreaFilled(false);
+		downButton.setBorderPainted(false);
+		downButton.setOpaque(false);
+		downButton.setForeground(Color.white);
+		dpad.add(downButton);
+		
+		ImagePanel launchPanel = new ImagePanel("launch.jpg");
+		launchPanel.setPreferredSize(new Dimension(100,100));
+		launchPanel.setBackground(Color.DARK_GRAY);
+		controlPanel.add(launchPanel);
+		
 		
 		JPanel resPanel = new JPanel();
 		resPanel.setPreferredSize(new Dimension(200, 30));
@@ -355,5 +415,25 @@ public class ClientLauncher extends JFrame{
 	
 	public static void main(String[] args) throws IOException {
 		ClientLauncher s = new ClientLauncher();
+	}
+	
+	public class ImagePanel extends JPanel{
+
+	    private BufferedImage image;
+
+	    public ImagePanel(String name) {
+	       try {                
+	          image = ImageIO.read(new File(name));
+	       } catch (IOException ex) {
+	            // handle exception...
+	       }
+	    }
+
+	    @Override
+	    protected void paintComponent(Graphics g) {
+	        super.paintComponent(g);
+	        g.drawImage(image, 0, 0, null); // see javadoc for more info on the parameters            
+	    }
+
 	}
 }
