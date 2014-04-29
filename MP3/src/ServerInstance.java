@@ -1,16 +1,9 @@
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.gstreamer.Bin;
 import org.gstreamer.Bus;
 import org.gstreamer.Caps;
@@ -20,12 +13,9 @@ import org.gstreamer.Format;
 import org.gstreamer.GhostPad;
 import org.gstreamer.Gst;
 import org.gstreamer.GstObject;
-import org.gstreamer.Pad;
 import org.gstreamer.Pipeline;
 import org.gstreamer.SeekFlags;
 import org.gstreamer.SeekType;
-import org.gstreamer.Structure;
-import org.gstreamer.elements.DecodeBin2;
 import org.gstreamer.elements.good.RTPBin;
 import org.json.JSONObject;
 
@@ -154,13 +144,13 @@ public class ServerInstance extends Thread {
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	private Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
 		String[] s = settings.split(" ");
 		resolution = s[0];          // 240p/480p
 		final String attribute = s[1];     // Passive/Active
 		clientBW = Integer.parseInt(s[2]); // Some amount
-		Gst.init();
+		String[] args = {"--gst-plugin-path=/usr/local/lib/gstreamer-0.10"};
+		Gst.init("server", args);
 		
 		serverPipe = new Pipeline();
 		
@@ -169,21 +159,30 @@ public class ServerInstance extends Thread {
 		// camera input
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
 		Element videoColors = ElementFactory.make("ffmpegcolorspace", "vidcolors");
+		Element motion = ElementFactory.make("motiondetector", "motion");
+		motion.set("draw_motion", "true");
+		motion.set("rate_limit", "500");
+		motion.set("threshold", "64");
+		Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
 		Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
 		videoOverlay.set("fit-to-frame", "true");
-		videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"shitty.png\" /></svg>");
+		videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"overlay1.png\" /></svg>");
 		Element videoColors2 = ElementFactory.make("ffmpegcolorspace", "vidcolors2");
 		Element videoScale = ElementFactory.make("videoscale", "vidscale");
 		Element videoCaps = ElementFactory.make("capsfilter", "vidcaps");
 		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,width=640,height=480"));
 		Element videoColors3 = ElementFactory.make("ffmpegcolorspace", "vidcolors3");
+		Element balance = ElementFactory.make("videobalance", "balance");
+		balance.set("saturation", "0.0");
+		balance.set("contrast", "1.5");
+		Element videoColors4 = ElementFactory.make("ffmpegcolorspace", "vidcolors4");
 		
 		// image input
 		
 		// mixer
 		
-		videoBin.addMany(videoSrc, videoColors, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3);
-		Element.linkMany(videoSrc, videoColors, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3);
+		videoBin.addMany(videoSrc, videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
+		Element.linkMany(videoSrc, videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
 		
 		
 		videorate = ElementFactory.make("videorate", "rate");
@@ -200,7 +199,7 @@ public class ServerInstance extends Thread {
 		Element videopay = ElementFactory.make("rtpjpegpay", "vpayloader");
 		
 		videoBin.addMany(videorate, videoenc, videopay);
-		Element.linkMany(videoColors3,videorate, videoenc, videopay);
+		Element.linkMany(videoColors4, videorate, videoenc, videopay);
 		videoBin.addPad(new GhostPad("src", videopay.getStaticPad("src")));
 		serverPipe.add(videoBin);
 		
@@ -270,6 +269,7 @@ public class ServerInstance extends Thread {
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
                 Server.pushLog("> (" + threadNum + ") GSTREAMER ERROR: code=" + code + " message=" + message);
+                serverPipe.debugToDotFile(1, "servererr");
             }
         });
         bus.connect(new Bus.EOS() {
