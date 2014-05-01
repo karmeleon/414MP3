@@ -33,14 +33,15 @@ public class ServerInstance extends Thread {
 	public Pipeline serverPipe;
 	private int threadNum;
 	private Element videorate;
-	private boolean moveable = true;
+	private boolean moveable;
 	
-	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num) {
+	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num, boolean moveable) {
 		serverLoc = serverIP;
 		clientLoc = clientIP;
 		port = startPort;
 		this.skt = skt;
 		threadNum = num;
+		this.moveable = moveable;
 	}
 	
 	public void run() {

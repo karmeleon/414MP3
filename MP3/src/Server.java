@@ -92,7 +92,7 @@ public class Server {
 		        else if (opt == 0) {
 		        	clientLoc = "127.0.0.1";
 		        }
-		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt, currThread);
+		        ServerInstance thr = new ServerInstance(currentPort, clientLoc, serverLoc, skt, currThread, (cam == 1));
 		        instances.add(thr);
 		        thr.start();
 		        
