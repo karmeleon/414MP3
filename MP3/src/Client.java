@@ -284,11 +284,14 @@ public class Client {
 		// src1
 		Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
 		Element videoDecode = ElementFactory.make("jpegdec", "decode");
+		Element videoRate = ElementFactory.make("videorate", "rate1");
+		Element videoSrc1Caps = ElementFactory.make("capsfilter", "src1caps");
+		videoSrc1Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1"));
 		Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
 		// src2
 		Element videoSrc2 = ElementFactory.make("videotestsrc", "vidsrc2");
 		Element videoSrc2Caps = ElementFactory.make("capsfilter", "src2caps");
-		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, width=200, height=150"));
+		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1, width=200, height=150"));
 		Element videoColor2 = ElementFactory.make("ffmpegcolorspace", "color2");
 		
 		// mixer
@@ -296,8 +299,8 @@ public class Client {
 		Element mixedColor = ElementFactory.make("ffmpegcolorspace", "mixcolor");
 		
 		
-		videoBin.addMany(videoDepay, videoDecode, videoColor, videoSrc2, videoSrc2Caps, videoColor2, videoMix, mixedColor);
-		Element.linkMany(videoDepay, videoDecode, videoColor, videoMix, mixedColor); 
+		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoSrc2, videoSrc2Caps, videoColor2, videoMix, mixedColor);
+		Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
 		Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
 		
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
@@ -340,9 +343,12 @@ public class Client {
 			public void padAdded(Element arg0, Pad arg1) {
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
 	                arg1.link(videoBin.getStaticPad("sink"));
+	                Pad negPad = videoBin.getElementByName("color2").getStaticPad("src");
+	                System.out.println(negPad.getNegotiatedCaps().toString());
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
 					arg1.link(audioBin.getStaticPad("sink"));
 				}
+				clientPipe.debugToDotFile(1, "clientsucc");
 			}
 		});
 		
