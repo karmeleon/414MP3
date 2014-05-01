@@ -33,6 +33,7 @@ public class ServerInstance extends Thread {
 	public Pipeline serverPipe;
 	private int threadNum;
 	private Element videorate;
+	private boolean moveable = true;
 	
 	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num) {
 		serverLoc = serverIP;
@@ -115,21 +116,28 @@ public class ServerInstance extends Thread {
 	        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
 	        		break;
 	        	case "reset":
-	        		VideoDevice vid = new VideoDevice("/dev/video0");
-	        		vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
-	        		vid.releaseControlList();
-	        		vid.release();
+	        		if(moveable) {
+	        			VideoDevice vid = new VideoDevice("/dev/video0");
+		        		vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
+		        		vid.releaseControlList();
+		        		vid.release();
+	        		}
+	        		break;
 	        	case "pan":
-	        		VideoDevice vd = new VideoDevice("/dev/video0");
-	        		vd.getControlList().getControl("Pan (relative)").setValue(amount);
-	        		vd.releaseControlList();
-	        		vd.release();
+	        		if(moveable) {
+	        			VideoDevice vd = new VideoDevice("/dev/video0");
+		        		vd.getControlList().getControl("Pan (relative)").setValue(amount);
+		        		vd.releaseControlList();
+		        		vd.release();
+	        		}
 	        		break;
 	        	case "tilt":
-	        		VideoDevice vde = new VideoDevice("/dev/video0");
-	        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
-	        		vde.releaseControlList();
-	        		vde.release();
+	        		if(moveable) {
+	        			VideoDevice vde = new VideoDevice("/dev/video0");
+		        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+		        		vde.releaseControlList();
+		        		vde.release();
+	        		}
 	        		break;
 	        	default:
 	        		break;
@@ -159,30 +167,34 @@ public class ServerInstance extends Thread {
 		// camera input
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
 		Element videoColors = ElementFactory.make("ffmpegcolorspace", "vidcolors");
-		Element motion = ElementFactory.make("motiondetector", "motion");
-		motion.set("draw_motion", "true");
-		motion.set("rate_limit", "500");
-		motion.set("threshold", "128");
-		Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
-		Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
-		videoOverlay.set("fit-to-frame", "true");
-		videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"overlay1.png\" /></svg>");
-		Element videoColors2 = ElementFactory.make("ffmpegcolorspace", "vidcolors2");
 		Element videoScale = ElementFactory.make("videoscale", "vidscale");
 		Element videoCaps = ElementFactory.make("capsfilter", "vidcaps");
 		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,width=640,height=480"));
-		Element videoColors3 = ElementFactory.make("ffmpegcolorspace", "vidcolors3");
-		Element balance = ElementFactory.make("videobalance", "balance");
-		balance.set("saturation", "0.0");
-		balance.set("contrast", "1.5");
 		Element videoColors4 = ElementFactory.make("ffmpegcolorspace", "vidcolors4");
+		videoBin.addMany(videoSrc, videoColors, videoScale, videoCaps, videoColors4);
+		Element.linkMany(videoSrc, videoColors);
 		
-		// image input
+		if(moveable) {
+			Element motion = ElementFactory.make("motiondetector", "motion");
+			motion.set("draw_motion", "true");
+			motion.set("rate_limit", "500");
+			motion.set("threshold", "128");
+			Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
+			Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
+			videoOverlay.set("fit-to-frame", "true");
+			videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"overlay1.png\" /></svg>");
+			Element videoColors2 = ElementFactory.make("ffmpegcolorspace", "vidcolors2");
+			Element balance = ElementFactory.make("videobalance", "balance");
+			balance.set("saturation", "0.0");
+			balance.set("contrast", "1.5");
+			Element videoColors3 = ElementFactory.make("ffmpegcolorspace", "vidcolors3");
+			videoBin.addMany(motion, videoColors5, videoOverlay, videoColors2, balance, videoColors3);
+			Element.linkMany(videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
+		}
+		else
+			Element.linkMany(videoColors, videoScale, videoCaps, videoColors4);
 		
-		// mixer
-		
-		videoBin.addMany(videoSrc, videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
-		Element.linkMany(videoSrc, videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
+		//Element.linkMany(videoSrc, videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
 		
 		
 		videorate = ElementFactory.make("videorate", "rate");
