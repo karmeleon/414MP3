@@ -23,7 +23,6 @@ public class ClientLauncher extends JFrame{
 	JTextArea textArea;
 	JPanel videoPanel;
 	String rsrc;
-	JComboBox<String> resCombo;
 	JComboBox<String> actCombo;
 	Socket bandwidthSKT = null;
 	PrintWriter bandwidthWriter;
@@ -108,9 +107,25 @@ public class ClientLauncher extends JFrame{
 		
 		JPanel controlPanel = new JPanel();
 		controlPanel.setBackground(Color.DARK_GRAY);
+		controlPanel.setLayout(new BorderLayout());
 		controlPanel.setPreferredSize(new Dimension(200,640));
 		mainContainer.add(controlPanel);
 		
+		JPanel pilotPanel = new JPanel();
+		pilotPanel.setPreferredSize(new Dimension(200, 320));
+		controlPanel.add(pilotPanel, BorderLayout.PAGE_START);
+		
+		JLabel pilotLabel = new JLabel("PILOT");
+		pilotPanel.add(pilotLabel);
+		
+		JPanel targetPanel = new JPanel();
+		targetPanel.setPreferredSize(new Dimension(200, 320));
+		controlPanel.add(targetPanel, BorderLayout.PAGE_END);
+		
+		JLabel targetLabel = new JLabel("TARGET");
+		targetPanel.add(targetLabel);
+		
+		/*
 		JPanel spacer = new JPanel();
 		spacer.setBackground(Color.darkGray);
 		spacer.setPreferredSize(new Dimension(200,300));
@@ -162,7 +177,7 @@ public class ClientLauncher extends JFrame{
 		launchPanel.setPreferredSize(new Dimension(100,100));
 		launchPanel.setBackground(Color.DARK_GRAY);
 		controlPanel.add(launchPanel);
-		
+		*/
 		
 		JPanel resPanel = new JPanel();
 		resPanel.setPreferredSize(new Dimension(200, 30));
@@ -171,47 +186,16 @@ public class ClientLauncher extends JFrame{
 		
 		scanResource();
 		
+		JPanel ctrlPanel = new JPanel();
+		ctrlPanel.setPreferredSize(new Dimension(800, 30));
+		mainContainer.add(ctrlPanel);
+		
 		makeCtrlButton("Refresh");
-		resPanel.add(buttons.get("Refresh"));
+		ctrlPanel.add(buttons.get("Refresh"));
 		buttons.get("Refresh").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> RSRC: UPDATED");
 				Client.updateResource();
-			}
-		});
-		
-		JPanel ctrlPanel = new JPanel();
-		ctrlPanel.setPreferredSize(new Dimension(800, 30));
-		mainContainer.add(ctrlPanel);	
-
-		makeCtrlButton("FF");
-		ctrlPanel.add(buttons.get("FF"));
-		buttons.get("FF").addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String settings = "" + resCombo.getSelectedItem()
-						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " forward";
-				try {
-					Client.handleRequest(vc, settings, textArea, netAddress.getText()); // 0 - LAN ;; 1 - INET
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			}
-		});
-		
-		makeCtrlButton("RW");
-		ctrlPanel.add(buttons.get("RW"));
-		buttons.get("RW").addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String settings = "" + resCombo.getSelectedItem()
-						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " rewind";
-				try {
-					Client.handleRequest(vc, settings, textArea, netAddress.getText());
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
 			}
 		});
 		
@@ -222,16 +206,15 @@ public class ClientLauncher extends JFrame{
 				buttons.get("Play").setText(status ? "Pause" : "Play");
 			}
 		});
-		ctrlPanel.add(buttons.get("Play"));
+		// ctrlPanel.add(buttons.get("Play"));
 		
 		makeCtrlButton("Stop");
-		ctrlPanel.add(buttons.get("Stop"));
+		// ctrlPanel.add(buttons.get("Stop"));
 		buttons.get("Stop").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				clearLog();
 				pushLog("> CTRL: STOP");
-				String settings = "" + resCombo.getSelectedItem()
-						+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth + " stop";
 				try {
 					Client.handleRequest(vc, settings, textArea, netAddress.getText());
@@ -246,16 +229,11 @@ public class ClientLauncher extends JFrame{
 		
 		netAddress = new JTextField();
 		netAddress.setPreferredSize(new Dimension(200, 30));
-		ctrlPanel.add(netAddress);
+		// ctrlPanel.add(netAddress);
 		
 		JPanel optPanel = new JPanel();
 		optPanel.setPreferredSize(new Dimension(200,30));
 		mainContainer.add(optPanel);
-		
-		String[] resSettings = {"240p", "360p", "480p", "720p"};
-		resCombo = new JComboBox<String>(resSettings);
-		resCombo.setPreferredSize(new Dimension(95,30));
-		optPanel.add(resCombo);
 		
 		String[] actSettings = {"Passive", "Active"};
 		actCombo = new JComboBox<String>(actSettings);
@@ -287,11 +265,10 @@ public class ClientLauncher extends JFrame{
 	 */
 	private boolean playback() {
 		if (!playing) {
-			pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + resCombo.getSelectedItem() + " " + bandwidth);
+			pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + bandwidth);
 			Thread clientThread = new Thread() {
 				public void run() {
-					String settings = "" + resCombo.getSelectedItem()
-							+ " " + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+					String settings = "" + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 							+ " " + bandwidth + " play";
 					try {
 						Client.handleRequest(vc, settings, textArea, netAddress.getText());
@@ -359,8 +336,7 @@ public class ClientLauncher extends JFrame{
 			return (playing = true);
 		}
 		else { // if (playing)
-			String settings = "" + resCombo.getSelectedItem()
-					+ " " + actCombo.getSelectedItem()
+			String settings = "" + actCombo.getSelectedItem()
 					+ " " + bandwidth + " pause";
 			try {
 				Client.handleRequest(vc, settings, textArea, netAddress.getText());
