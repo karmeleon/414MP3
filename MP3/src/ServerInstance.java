@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -20,6 +21,8 @@ import org.gstreamer.elements.good.RTPBin;
 import org.json.JSONObject;
 
 import au.edu.jcu.v4l4j.VideoDevice;
+import au.edu.jcu.v4l4j.exceptions.ControlException;
+import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
 
 public class ServerInstance extends Thread {
@@ -34,6 +37,7 @@ public class ServerInstance extends Thread {
 	private int threadNum;
 	private Element videorate;
 	private boolean moveable;
+	private boolean v4l4jEnabled = true;
 	
 	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num, boolean moveable) {
 		serverLoc = serverIP;
@@ -117,25 +121,37 @@ public class ServerInstance extends Thread {
 	        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
 	        		break;
 	        	case "reset":
-	        		if(moveable) {
+	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vid = new VideoDevice("/dev/video0");
-		        		vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
+	        			try {
+	        				vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Pan/tilt Reset\"");
+	        			}
 		        		vid.releaseControlList();
 		        		vid.release();
 	        		}
 	        		break;
 	        	case "pan":
-	        		if(moveable) {
+	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vd = new VideoDevice("/dev/video0");
-		        		vd.getControlList().getControl("Pan (relative)").setValue(amount);
+	        			try {
+	        				vd.getControlList().getControl("Pan (relative)").setValue(amount);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Pan (relative)\"");
+	        			}
 		        		vd.releaseControlList();
 		        		vd.release();
 	        		}
 	        		break;
 	        	case "tilt":
-	        		if(moveable) {
+	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vde = new VideoDevice("/dev/video0");
-		        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+	        			try{
+			        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Tilt (relative)\"");
+	        			}
 		        		vde.releaseControlList();
 		        		vde.release();
 	        		}
@@ -164,6 +180,17 @@ public class ServerInstance extends Thread {
 		serverPipe = new Pipeline();
 		
 		final Bin videoBin = new Bin("VideoBin");
+		
+		if(moveable) {
+			File f = new File("/usr/lib/jni/libv4l4j.so");
+			if(f.exists())
+				v4l4jEnabled = true;
+			else {
+				v4l4jEnabled = false;
+				Server.pushLog("> v4l4j not detected; camera control disabled");
+				Server.pushLog("> v4l4j can be installed from https://code.google.com/p/v4l4j/");
+			}
+		}
 		
 		// camera input
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
