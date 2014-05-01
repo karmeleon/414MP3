@@ -281,12 +281,24 @@ public class Client {
 		
 		videoBin = new Bin("videoBin");
 		
-		final Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
-		final Element videoDecode = ElementFactory.make("jpegdec", "decode");
-		final Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
+		// src1
+		Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
+		Element videoDecode = ElementFactory.make("jpegdec", "decode");
+		Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
+		// src2
+		Element videoSrc2 = ElementFactory.make("videotestsrc", "vidsrc2");
+		Element videoSrc2Caps = ElementFactory.make("capsfilter", "src2caps");
+		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, width=200, height=150"));
+		Element videoColor2 = ElementFactory.make("ffmpegcolorspace", "color2");
 		
-		videoBin.addMany(videoDepay, videoDecode, videoColor);
-		Element.linkMany(videoDepay, videoDecode, videoColor);
+		// mixer
+		Element videoMix = ElementFactory.make("videomixer", "vidmix");
+		Element mixedColor = ElementFactory.make("ffmpegcolorspace", "mixcolor");
+		
+		
+		videoBin.addMany(videoDepay, videoDecode, videoColor, videoSrc2, videoSrc2Caps, videoColor2, videoMix, mixedColor);
+		Element.linkMany(videoDepay, videoDecode, videoColor, videoMix, mixedColor); 
+		Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
 		
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
 		clientPipe.add(videoBin);
@@ -339,7 +351,7 @@ public class Client {
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
                 pushLog("> GSTREAMER ERROR: code=" + code + " message=" + message);
-                clientPipe.debugToDotFile(1, "client");
+                clientPipe.debugToDotFile(1, "clienterr");
             }
         });
         bus.connect(new Bus.EOS() {
@@ -371,7 +383,7 @@ public class Client {
 			} 
 		});
 		
-		Element.linkMany(videoColor, vc.getElement());
+		Element.linkMany(mixedColor, vc.getElement());
         
         Thread videoThread = new Thread() {
         	public void run() {
