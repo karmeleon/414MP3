@@ -18,6 +18,7 @@ public class ServerLauncher extends JFrame {
 	ServerLauncher serverGUI;
 	static JPanel ctrlPanel;
 	static JComboBox<String> netOption;
+	static JComboBox<String> camOption;
 	
 	public ServerLauncher() {
 		super("Server");
@@ -50,7 +51,7 @@ public class ServerLauncher extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				Thread serverThread = new Thread() {
 					public void run() {
-						Server.startServer(textArea, netOption.getSelectedIndex()); // 0 - LAN ;; 1 - INET
+						Server.startServer(textArea, netOption.getSelectedIndex(), camOption.getSelectedIndex()); // 0 - LAN ;; 1 - INET
 					}
 				};
 				serverThread.start();
@@ -64,6 +65,11 @@ public class ServerLauncher extends JFrame {
 		netOption = new JComboBox<String>(netSettings);
 		netOption.setPreferredSize(new Dimension(95,30));
 		ctrlPanel.add(netOption);
+		
+		String[] camSettings = {"PILOT", "TARGET"};
+		camOption = new JComboBox<String>(camSettings);
+		camOption.setPreferredSize(new Dimension(95, 30));
+		ctrlPanel.add(camOption);
 		
 		textArea = new JTextArea();
 		scrollPane = new JScrollPane(textArea);

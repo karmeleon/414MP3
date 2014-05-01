@@ -30,7 +30,7 @@ public class Server {
 	static String serverLoc;
 	static ArrayList<ServerInstance> instances;
 	
-	public static void startServer(JTextArea log, int opt) { // 0 - LAN ;; 1 - INET
+	public static void startServer(JTextArea log, int opt, int cam) { // 0 - LAN ;; 1 - INET
 		textArea = log;
 		
 		instances = new ArrayList<ServerInstance>();
