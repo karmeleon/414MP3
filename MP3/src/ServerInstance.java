@@ -176,10 +176,24 @@ public class ServerInstance extends Thread {
 		Element.linkMany(videoSrc, videoColors);
 		
 		if(moveable) {
-			Element motion = ElementFactory.make("motiondetector", "motion");
-			motion.set("draw_motion", "true");
-			motion.set("rate_limit", "500");
-			motion.set("threshold", "128");
+			boolean motionInstalled = true;
+			try {
+				ElementFactory.find("motiondetector");
+			} catch(Exception e) {
+				Server.pushLog("> MotionDetector element not detected; proceeding without.");
+				Server.pushLog("> It can be installed from https://github.com/codebrainz/motiondetector");
+				Server.pushLog("> If it is installed, make sure it was installed to /usr/local/lib/gstreamer-0.10");
+				motionInstalled = false;
+			}
+			Element motion = null;
+			if(motionInstalled) {
+				Server.pushLog("> MotionDetector element installed; enabling.");
+				motion = ElementFactory.make("motiondetector", "motion");
+				motion.set("draw_motion", "true");
+				motion.set("rate_limit", "500");
+				motion.set("threshold", "128");
+				videoBin.add(motion);
+			}
 			Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
 			Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
 			videoOverlay.set("fit-to-frame", "true");
@@ -189,8 +203,12 @@ public class ServerInstance extends Thread {
 			balance.set("saturation", "0.0");
 			balance.set("contrast", "1.5");
 			Element videoColors3 = ElementFactory.make("ffmpegcolorspace", "vidcolors3");
-			videoBin.addMany(motion, videoColors5, videoOverlay, videoColors2, balance, videoColors3);
-			Element.linkMany(videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
+			videoBin.addMany(videoColors5, videoOverlay, videoColors2, balance, videoColors3);
+			if(motionInstalled)
+				Element.linkMany(videoColors, motion, videoColors5);
+			else
+				Element.linkMany(videoColors, videoColors5);	// I know it's pointless, but it's easier to deal with
+			Element.linkMany(videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
 		}
 		else
 			Element.linkMany(videoColors, videoScale, videoCaps, videoColors4);
@@ -296,7 +314,7 @@ public class ServerInstance extends Thread {
         });
         
         serverPipe.play();
-        //Gst.main();
+        serverPipe.debugToDotFile(0, "serversucc");
         return serverPipe;
 	}
 	
