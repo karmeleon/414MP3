@@ -281,12 +281,27 @@ public class Client {
 		
 		videoBin = new Bin("videoBin");
 		
-		final Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
-		final Element videoDecode = ElementFactory.make("jpegdec", "decode");
-		final Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
+		// src1
+		Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
+		Element videoDecode = ElementFactory.make("jpegdec", "decode");
+		Element videoRate = ElementFactory.make("videorate", "rate1");
+		Element videoSrc1Caps = ElementFactory.make("capsfilter", "src1caps");
+		videoSrc1Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1"));
+		Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
+		// src2
+		Element videoSrc2 = ElementFactory.make("videotestsrc", "vidsrc2");
+		Element videoSrc2Caps = ElementFactory.make("capsfilter", "src2caps");
+		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1, width=200, height=150"));
+		Element videoColor2 = ElementFactory.make("ffmpegcolorspace", "color2");
 		
-		videoBin.addMany(videoDepay, videoDecode, videoColor);
-		Element.linkMany(videoDepay, videoDecode, videoColor);
+		// mixer
+		Element videoMix = ElementFactory.make("videomixer", "vidmix");
+		Element mixedColor = ElementFactory.make("ffmpegcolorspace", "mixcolor");
+		
+		
+		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoSrc2, videoSrc2Caps, videoColor2, videoMix, mixedColor);
+		Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
+		Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
 		
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
 		clientPipe.add(videoBin);
@@ -331,6 +346,7 @@ public class Client {
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
 					arg1.link(audioBin.getStaticPad("sink"));
 				}
+				clientPipe.debugToDotFile(1, "clientsucc");
 			}
 		});
 		
@@ -339,7 +355,7 @@ public class Client {
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
                 pushLog("> GSTREAMER ERROR: code=" + code + " message=" + message);
-                clientPipe.debugToDotFile(1, "client");
+                clientPipe.debugToDotFile(1, "clienterr");
             }
         });
         bus.connect(new Bus.EOS() {
@@ -371,7 +387,7 @@ public class Client {
 			} 
 		});
 		
-		Element.linkMany(videoColor, vc.getElement());
+		Element.linkMany(mixedColor, vc.getElement());
         
         Thread videoThread = new Thread() {
         	public void run() {
