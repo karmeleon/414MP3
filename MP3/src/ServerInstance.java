@@ -162,7 +162,7 @@ public class ServerInstance extends Thread {
 		Element motion = ElementFactory.make("motiondetector", "motion");
 		motion.set("draw_motion", "true");
 		motion.set("rate_limit", "500");
-		motion.set("threshold", "64");
+		motion.set("threshold", "128");
 		Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
 		Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
 		videoOverlay.set("fit-to-frame", "true");

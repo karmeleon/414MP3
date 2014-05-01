@@ -343,8 +343,6 @@ public class Client {
 			public void padAdded(Element arg0, Pad arg1) {
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
 	                arg1.link(videoBin.getStaticPad("sink"));
-	                Pad negPad = videoBin.getElementByName("color2").getStaticPad("src");
-	                System.out.println(negPad.getNegotiatedCaps().toString());
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
 					arg1.link(audioBin.getStaticPad("sink"));
 				}
