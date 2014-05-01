@@ -37,6 +37,7 @@ public class ClientLauncher extends JFrame{
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
+		System.out.println("RUNNING CLIENT");
 		Gst.init();
 		currpath = System.getProperty("user.dir");
 		setSize(1200,800);
@@ -47,151 +48,38 @@ public class ClientLauncher extends JFrame{
 		
 		JPanel mainContainer = new JPanel();
 		mainContainer.setPreferredSize(new Dimension(1200, 800));
-		mainContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
+		mainContainer.setLayout(new BorderLayout());
+		// mainContainer.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		mainContainer.setBackground(new Color(255,255,0));
 		getContentPane().add(mainContainer);
-		
-		JPanel dataPanel = new JPanel();
-		dataPanel.setPreferredSize(new Dimension(1200, 30));
-		dataPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
-		dataPanel.setBackground(new Color(0,0,0));
-		
-		List<JLabel> datalabels = new ArrayList<JLabel>();
-		
-		JLabel lctime = new JLabel("Incoming Bandwidth: ");// "<html>Text color: <font color='red'>red</font></html>"
-		datalabels.add(lctime);
-		JLabel ldtime = new JLabel("Synchronization Skew: ");
-		datalabels.add(ldtime);
-		JLabel lfsize = new JLabel("Media Jitter: ");
-		datalabels.add(lfsize);
-		JLabel lcratio = new JLabel("Failure Rate: ");
-		datalabels.add(lcratio);
-		
-		List<JLabel> datatexts = new ArrayList<JLabel>();
-		mon1 = new JLabel("0");// "<html>Text color: <font color='red'>red</font></html>"
-		datatexts.add(mon1);
-		mon2 = new JLabel("0");
-		datatexts.add(mon2);
-		mon3 = new JLabel("0");
-		datatexts.add(mon3);
-		mon4 = new JLabel("0");
-		datatexts.add(mon4);
-		
-		for (int i = 0; i < 4; i++) {
-			datalabels.get(i).setHorizontalAlignment(SwingConstants.RIGHT);
-			datalabels.get(i).setPreferredSize(new Dimension(200, 30));
-			datalabels.get(i).setForeground(Color.white);
-		}
-		
-		for (int i = 0; i < 4; i++) {
-			datatexts.get(i).setHorizontalAlignment(SwingConstants.LEFT);
-			datatexts.get(i).setPreferredSize(new Dimension(100, 30));
-			datatexts.get(i).setForeground(Color.white);
-		}
-		
-		for (int i = 0; i < 4; i++) {
-			dataPanel.add(datalabels.get(i));
-			dataPanel.add(datatexts.get(i));
-		}
 		
 		videoPanel = new JPanel();
 		videoPanel.setPreferredSize(new Dimension(1000, 640));
 		videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		videoPanel.setBackground(new Color(0,0,0));
-		mainContainer.add(videoPanel);
+		mainContainer.add(videoPanel, BorderLayout.LINE_START);
 		
 		vc = new VideoComponent();
-		vc.setPreferredSize(new Dimension(1200, 640));
+		vc.setPreferredSize(new Dimension(1000, 640));
 		vc.setBackground(Color.green);
 		videoPanel.add(vc);
 		
-		JPanel controlPanel = new JPanel();
-		controlPanel.setBackground(Color.DARK_GRAY);
-		controlPanel.setLayout(new BorderLayout());
-		controlPanel.setPreferredSize(new Dimension(200,640));
-		mainContainer.add(controlPanel);
+		JPanel debugPanel = new JPanel();
+		debugPanel.setPreferredSize(new Dimension(200, 640));
+		debugPanel.setBackground(Color.red);
+		debugPanel.setLayout(new BorderLayout());
+		mainContainer.add(debugPanel, BorderLayout.LINE_END);
 		
-		JPanel pilotPanel = new JPanel();
-		pilotPanel.setPreferredSize(new Dimension(200, 320));
-		controlPanel.add(pilotPanel, BorderLayout.PAGE_START);
-		
-		JLabel pilotLabel = new JLabel("PILOT");
-		pilotPanel.add(pilotLabel);
-		
-		JPanel targetPanel = new JPanel();
-		targetPanel.setPreferredSize(new Dimension(200, 320));
-		controlPanel.add(targetPanel, BorderLayout.PAGE_END);
-		
-		JLabel targetLabel = new JLabel("TARGET");
-		targetPanel.add(targetLabel);
-		
-		/*
-		JPanel spacer = new JPanel();
-		spacer.setBackground(Color.darkGray);
-		spacer.setPreferredSize(new Dimension(200,300));
-		controlPanel.add(spacer);
-		
-		ImagePanel dpad = new ImagePanel("dpad.png");
-		dpad.setPreferredSize(new Dimension(160,160));
-		dpad.setBackground(Color.DARK_GRAY);
-		controlPanel.add(dpad);
-		
-		JButton upButton = new JButton("A");
-		upButton.setContentAreaFilled(false);
-		upButton.setBorderPainted(false);
-		upButton.setOpaque(false);
-		upButton.setForeground(Color.white);
-		dpad.add(upButton);
-		
-		JPanel a = new JPanel(); a.setPreferredSize(new Dimension(160,24)); dpad.add(a);
-		a.setOpaque(false);
-		
-		JButton leftButton = new JButton("<");
-		leftButton.setContentAreaFilled(false);
-		leftButton.setBorderPainted(false);
-		leftButton.setOpaque(false);
-		leftButton.setForeground(Color.white);
-		dpad.add(leftButton);
-		
-		JPanel b = new JPanel(); b.setPreferredSize(new Dimension(50,24)); dpad.add(b);
-		b.setOpaque(false);
-		
-		JButton rightButton = new JButton(">");
-		rightButton.setContentAreaFilled(false);
-		rightButton.setBorderPainted(false);
-		rightButton.setOpaque(false);
-		rightButton.setForeground(Color.white);
-		dpad.add(rightButton);
-		
-		JPanel c = new JPanel(); c.setPreferredSize(new Dimension(160,24)); dpad.add(c);
-		c.setOpaque(false);
-		
-		JButton downButton = new JButton("V");
-		downButton.setContentAreaFilled(false);
-		downButton.setBorderPainted(false);
-		downButton.setOpaque(false);
-		downButton.setForeground(Color.white);
-		dpad.add(downButton);
-		
-		ImagePanel launchPanel = new ImagePanel("launch.jpg");
-		launchPanel.setPreferredSize(new Dimension(100,100));
-		launchPanel.setBackground(Color.DARK_GRAY);
-		controlPanel.add(launchPanel);
-		*/
-		
-		JPanel resPanel = new JPanel();
-		resPanel.setPreferredSize(new Dimension(200, 30));
-		resPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0,0));
-		mainContainer.add(resPanel);
+		textArea = new JTextArea();
+		JScrollPane scrollPane = new JScrollPane(textArea);
+		scrollPane.setPreferredSize(new Dimension(200, 610));
+		debugPanel.add(scrollPane, BorderLayout.PAGE_START);
 		
 		scanResource();
 		
-		JPanel ctrlPanel = new JPanel();
-		ctrlPanel.setPreferredSize(new Dimension(800, 30));
-		mainContainer.add(ctrlPanel);
-		
 		makeCtrlButton("Refresh");
-		ctrlPanel.add(buttons.get("Refresh"));
+		debugPanel.add(buttons.get("Refresh"), BorderLayout.PAGE_END);
+		buttons.get("Refresh").setPreferredSize(new Dimension(100, 30));
 		buttons.get("Refresh").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> RSRC: UPDATED");
@@ -199,10 +87,22 @@ public class ClientLauncher extends JFrame{
 			}
 		});
 		
+		JPanel botPanel = new JPanel();
+		botPanel.setPreferredSize(new Dimension(1200, 160));
+		botPanel.setLayout(new BorderLayout());
+		mainContainer.add(botPanel, BorderLayout.PAGE_END);
+		
+		ControlPanel pilotPanel = new ControlPanel("PILOT", 600, 160);
+		botPanel.add(pilotPanel, BorderLayout.LINE_START);
+		
+		ControlPanel targetPanel = new ControlPanel("TARGET", 600, 160);
+		botPanel.add(targetPanel, BorderLayout.LINE_END);
+		
+		/*
 		makeCtrlButton("Play");
 		buttons.get("Play").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				boolean status = playback();
+				boolean status = play();
 				buttons.get("Play").setText(status ? "Pause" : "Play");
 			}
 		});
@@ -233,37 +133,22 @@ public class ClientLauncher extends JFrame{
 		
 		JPanel optPanel = new JPanel();
 		optPanel.setPreferredSize(new Dimension(200,30));
-		mainContainer.add(optPanel);
+		// mainContainer.add(optPanel);
 		
 		String[] actSettings = {"Passive", "Active"};
 		actCombo = new JComboBox<String>(actSettings);
 		actCombo.setPreferredSize(new Dimension(95,30));
-		optPanel.add(actCombo);
-		
-		textArea = new JTextArea();
-		JScrollPane scrollPane = new JScrollPane(textArea);
-		scrollPane.setPreferredSize(new Dimension(1200, 100));
-		mainContainer.add(scrollPane);
-		
-		mainContainer.add(dataPanel);
-		
+		// optPanel.add(actCombo);
+		*/
 		pushLog("Starting Client...");
 		setVisible(true);
 		
 		// Path path = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
 		pushLog("> SYS: PATH " + currpath);
+		
 	}
 	
-	/**
-	 * Tries to change the current playback state of the media.
-	 * When clicked:
-	 * 	Does nothing when no video is playing.
-	 * 	Repeats video when video had finished playing.
-	 * 	Recovers normal playback speed if FF or RW was active
-	 * 	Reports back to play toggle button
-	 * @return state of player, true = playing, false = remain paused
-	 */
-	private boolean playback() {
+	private boolean play() {
 		if (!playing) {
 			pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + bandwidth);
 			Thread clientThread = new Thread() {
@@ -390,25 +275,5 @@ public class ClientLauncher extends JFrame{
 	
 	public static void main(String[] args) throws IOException {
 		ClientLauncher s = new ClientLauncher();
-	}
-	
-	public class ImagePanel extends JPanel{
-
-	    private BufferedImage image;
-
-	    public ImagePanel(String name) {
-	       try {                
-	          image = ImageIO.read(new File(name));
-	       } catch (IOException ex) {
-	            // handle exception...
-	       }
-	    }
-
-	    @Override
-	    protected void paintComponent(Graphics g) {
-	        super.paintComponent(g);
-	        g.drawImage(image, 0, 0, null); // see javadoc for more info on the parameters            
-	    }
-
 	}
 }
