@@ -47,7 +47,10 @@ public class ClientTarget {
 	
 	static String clientLoc;
 	static String serverLoc = "localhost";
-	static int interval = 200;
+	static int xint = 256;
+	static int yint = 128;
+	static int xpos = 0; // 8192
+	static int ypos = 0;
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log, String addr) throws UnknownHostException, IOException {
 		textArea = log;
@@ -96,26 +99,38 @@ public class ClientTarget {
 			else if(request.equalsIgnoreCase("up")) {
 				JSONObject json_up = new JSONObject();
 				json_up.put("command", "tilt");
-				json_up.put("amount", -interval);
+				json_up.put("amount", -yint);
 				out.println(json_up.toString());
 			}
 			else if(request.equalsIgnoreCase("down")) {
 				JSONObject json_down = new JSONObject();
 				json_down.put("command", "tilt");
-				json_down.put("amount", interval);
+				json_down.put("amount", yint);
 				out.println(json_down.toString());			
 			}
 			else if(request.equalsIgnoreCase("left")) {
-				JSONObject json_left = new JSONObject();
-				json_left.put("command", "pan");
-				json_left.put("amount", interval);
-				out.println(json_left.toString());
+				if (xpos + xint > 4096) {
+					
+				}
+				else {
+					xpos += xint;
+					JSONObject json_left = new JSONObject();
+					json_left.put("command", "pan");
+					json_left.put("amount", xint);
+					out.println(json_left.toString());
+				}
 			}
 			else if(request.equalsIgnoreCase("right")) {
-				JSONObject json_right = new JSONObject();
-				json_right.put("command", "pan");
-				json_right.put("amount", -interval);
-				out.println(json_right.toString());
+				if (xpos - xint < -4096) {
+					
+				}
+				else {
+					xpos -= xint;
+					JSONObject json_right = new JSONObject();
+					json_right.put("command", "pan");
+					json_right.put("amount", -xint);
+					out.println(json_right.toString());
+				}
 			}
 			else if(request.equalsIgnoreCase("reset")) {
 				JSONObject json_up = new JSONObject();
