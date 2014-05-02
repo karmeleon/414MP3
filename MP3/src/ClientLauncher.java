@@ -3,6 +3,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
@@ -23,7 +24,6 @@ public class ClientLauncher extends JFrame{
 	JTextArea textArea;
 	JPanel videoPanel;
 	String rsrc;
-	JComboBox<String> actCombo;
 	Socket bandwidthSKT = null;
 	PrintWriter bandwidthWriter;
 	
@@ -31,9 +31,10 @@ public class ClientLauncher extends JFrame{
 	boolean playing = false;
 	boolean connected = false;
 	VideoComponent vc;
-	JLabel mon1; JLabel mon2; JLabel mon3; JLabel mon4;
-	Timer monitor;
-	static JTextField netAddress;
+	
+	ControlPanel pilotPanel;
+	ControlPanel targetPanel;
+	
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
@@ -83,7 +84,8 @@ public class ClientLauncher extends JFrame{
 		buttons.get("Refresh").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> RSRC: UPDATED");
-				Client.updateResource();
+				ClientTarget.updateResource();
+				ClientPilot.updateResource();
 			}
 		});
 		
@@ -92,148 +94,156 @@ public class ClientLauncher extends JFrame{
 		botPanel.setLayout(new BorderLayout());
 		mainContainer.add(botPanel, BorderLayout.PAGE_END);
 		
-		ControlPanel pilotPanel = new ControlPanel("PILOT", 600, 160);
+		pilotPanel = new ControlPanel("PILOT", 600, 160);
 		botPanel.add(pilotPanel, BorderLayout.LINE_START);
 		
-		ControlPanel targetPanel = new ControlPanel("TARGET", 600, 160);
+		targetPanel = new ControlPanel("TARGET", 600, 160);
 		botPanel.add(targetPanel, BorderLayout.LINE_END);
 		
-		
-		/*
-		makeCtrlButton("Play");
-		buttons.get("Play").addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				boolean status = play();
-				buttons.get("Play").setText(status ? "Pause" : "Play");
+		targetPanel.playButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: TARGET CONNECTING");
+				pushLog("> SYS: REQUEST " + targetPanel.typeCombo.getSelectedItem() + " " + bandwidth);
+				Thread clientThread = new Thread() {
+					public void run() {
+						String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+								+ " " + bandwidth + " play";
+						try {
+							ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				};
+				clientThread.start();
 			}
 		});
-		// ctrlPanel.add(buttons.get("Play"));
-		
-		makeCtrlButton("Stop");
-		// ctrlPanel.add(buttons.get("Stop"));
-		buttons.get("Stop").addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		targetPanel.stopButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
 				clearLog();
-				pushLog("> CTRL: STOP");
-				String settings = "" + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " stop";
+				pushLog("> CTRL: TARGET CONNECTING");
+				pushLog("> SYS: REQUEST " + targetPanel.typeCombo.getSelectedItem() + " " + bandwidth);
+				
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " play";
 				try {
-					Client.handleRequest(vc, settings, textArea, netAddress.getText());
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
-				playing = false;
-				buttons.get("Play").setText("Play");
 			}
 		});
 		
-		netAddress = new JTextField();
-		netAddress.setPreferredSize(new Dimension(200, 30));
-		// ctrlPanel.add(netAddress);
-		
-		JPanel optPanel = new JPanel();
-		optPanel.setPreferredSize(new Dimension(200,30));
-		// mainContainer.add(optPanel);
-		
-		String[] actSettings = {"Passive", "Active"};
-		actCombo = new JComboBox<String>(actSettings);
-		actCombo.setPreferredSize(new Dimension(95,30));
-		// optPanel.add(actCombo);
-		*/
-		pushLog("Starting Client...");
-		setVisible(true);
-		
-		// Path path = FileSystems.getDefault().getPath(System.getProperty("user.dir"));
+		targetPanel.upButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: TARGET UP");
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " up";
+				try {
+					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		targetPanel.downButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: TARGET DOWN");
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " down";
+				try {
+					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		targetPanel.leftButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: TARGET LEFT");
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " left";
+				try {
+					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		targetPanel.rightButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: TARGET RIGHT");
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " right";
+				try {
+					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+
+		pushLog("> SYS: Starting Client...");
 		pushLog("> SYS: PATH " + currpath);
-		
+		setVisible(true);
 	}
 	
-	private boolean play() {
-		if (!playing) {
-			pushLog("> SYS: REQUEST " + actCombo.getSelectedItem() + " " + bandwidth);
-			Thread clientThread = new Thread() {
-				public void run() {
-					String settings = "" + (actCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-							+ " " + bandwidth + " play";
-					try {
-						Client.handleRequest(vc, settings, textArea, netAddress.getText());
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			};
-			clientThread.start();
-			monitor = new Timer();
-			monitor.scheduleAtFixedRate(new TimerTask() {
-				public void run() {
-					double vsizesum = 0;
-					double asizesum = 0;
-					double vtimesum = 0;
-					double atimesum = 0;
-					double vcount = 0;
-					double acount = 0;
-					
-					if (Client.videoQ != null && Client.audioQ != null && Client.videoQ.size() > 0 && Client.audioQ.size() > 0) {
-						vcount = Client.videoQ.size();
-						acount = Client.audioQ.size();
-						
-						while (Client.videoQ.peek() != null) {
-							// mon1.setText("" + Client.videoQ.peek().getFrameSize());
-							vsizesum+= Client.videoQ.peek().getFrameSize();
-							vtimesum+= Client.videoQ.peek().getFrameTime();
-							Client.videoQ.poll();
-						}
-						while (Client.audioQ.peek() != null) {
-							// mon1.setText("" + Client.videoQ.peek().getFrameSize());
-							asizesum+= Client.audioQ.peek().getFrameSize();
-							atimesum+= Client.audioQ.peek().getFrameTime();
-							Client.audioQ.poll();
-						}
-						
-						int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
-						int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
-						
-						mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
-						// DecimalFormat df = new DecimalFormat("0.00##");
-						// String restime = df.format(vtimeAVG - atimeAVG);
-						int skew = (int) (vtimeAVG - atimeAVG);
-						if (skew > 10000) skew = 0;
-						mon2.setText("" + skew);
-					}
-					else {
-						if (Client.videoQ != null && Client.videoQ.size() > 0) {
-							vcount = Client.videoQ.size();
-							while (Client.videoQ.peek() != null) {
-								vsizesum+= Client.videoQ.peek().getFrameSize();
-								vtimesum+= Client.videoQ.peek().getFrameTime();
-								Client.videoQ.poll();
-							}
-							
-							int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
-							mon1.setText("" + (vsizeAVG * 4));
-							mon2.setText("N/A");
-						}
-					}
-				}
-			}, 0, 250);
+
+	/*
+	monitor = new Timer();
+	monitor.scheduleAtFixedRate(new TimerTask() {
+		public void run() {
+			double vsizesum = 0;
+			double asizesum = 0;
+			double vtimesum = 0;
+			double atimesum = 0;
+			double vcount = 0;
+			double acount = 0;
 			
-			return (playing = true);
-		}
-		else { // if (playing)
-			String settings = "" + actCombo.getSelectedItem()
-					+ " " + bandwidth + " pause";
-			try {
-				Client.handleRequest(vc, settings, textArea, netAddress.getText());
-			} catch (IOException e) {
-				e.printStackTrace();
+			if (Client.videoQ != null && Client.audioQ != null && Client.videoQ.size() > 0 && Client.audioQ.size() > 0) {
+				vcount = Client.videoQ.size();
+				acount = Client.audioQ.size();
+				
+				while (Client.videoQ.peek() != null) {
+					// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+					vsizesum+= Client.videoQ.peek().getFrameSize();
+					vtimesum+= Client.videoQ.peek().getFrameTime();
+					Client.videoQ.poll();
+				}
+				while (Client.audioQ.peek() != null) {
+					// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+					asizesum+= Client.audioQ.peek().getFrameSize();
+					atimesum+= Client.audioQ.peek().getFrameTime();
+					Client.audioQ.poll();
+				}
+				
+				int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+				int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
+				
+				mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
+				// DecimalFormat df = new DecimalFormat("0.00##");
+				// String restime = df.format(vtimeAVG - atimeAVG);
+				int skew = (int) (vtimeAVG - atimeAVG);
+				if (skew > 10000) skew = 0;
+				mon2.setText("" + skew);
 			}
-			monitor.cancel();
-			return (playing = false);
+			else {
+				if (Client.videoQ != null && Client.videoQ.size() > 0) {
+					vcount = Client.videoQ.size();
+					while (Client.videoQ.peek() != null) {
+						vsizesum+= Client.videoQ.peek().getFrameSize();
+						vtimesum+= Client.videoQ.peek().getFrameTime();
+						Client.videoQ.poll();
+					}
+					
+					int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+					mon1.setText("" + (vsizeAVG * 4));
+					mon2.setText("N/A");
+				}
+			}
 		}
-		
-	}
+	}, 0, 250);
+	*/
 	
 	private void scanResource() throws IOException {
 		BufferedReader br = null;

@@ -26,8 +26,6 @@ import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
 
 public class ServerInstance extends Thread {
-
-	private String resolution;
 	private String serverLoc, clientLoc;
 	private int port;
 	private Socket skt;
@@ -87,7 +85,6 @@ public class ServerInstance extends Thread {
 	        	} catch (Exception ex) {
 	        		// this isn't a camera movement command, ignore it
 	        	}
-	        	
 	        	
 	        	try {
 	        		clientBW = Integer.parseInt(command);
@@ -171,9 +168,8 @@ public class ServerInstance extends Thread {
 
 	private Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
 		String[] s = settings.split(" ");
-		resolution = s[0];          // 240p/480p
-		final String attribute = s[1];     // Passive/Active
-		clientBW = Integer.parseInt(s[2]); // Some amount
+		final String attribute = s[0];     // Passive/Active
+		clientBW = Integer.parseInt(s[1]); // Some amount
 		String[] args = {"--gst-plugin-path=/usr/local/lib/gstreamer-0.10"};
 		Gst.init("server", args);
 		
@@ -351,9 +347,11 @@ public class ServerInstance extends Thread {
 		// 480 - 750 kbps -> 30fps
 		// 360 - 500 kbps -> 30fps
 		// 240 -  250 kbps -> 30fps
+		int setfps = 0;
+		/*
 		double cap = 30;
 		int res = Integer.parseInt(resolution.substring(0, 3));
-		int setfps = 0;
+		
 		if (res == 720)
 			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 1000.0)));
 		if (res == 480)
@@ -362,7 +360,12 @@ public class ServerInstance extends Thread {
 			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 500.0)));
 		if (res == 240)
 			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 250.0)));
+			*/
 		if (serverPipe != null) {
+			/**
+			 * HARD SET 30
+			 */
+			setfps = 30;
 			videorate.set("force-fps", "" + setfps);
 			if (Server.textArea != null)
 				Server.pushLog("> (" + threadNum + ") SYS: NEGT FPS " + setfps);
