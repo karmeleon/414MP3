@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -20,6 +21,8 @@ import org.gstreamer.elements.good.RTPBin;
 import org.json.JSONObject;
 
 import au.edu.jcu.v4l4j.VideoDevice;
+import au.edu.jcu.v4l4j.exceptions.ControlException;
+import au.edu.jcu.v4l4j.exceptions.V4L4JException;
 
 
 public class ServerInstance extends Thread {
@@ -33,14 +36,16 @@ public class ServerInstance extends Thread {
 	public Pipeline serverPipe;
 	private int threadNum;
 	private Element videorate;
-	private boolean moveable = true;
+	private boolean moveable;
+	private boolean v4l4jEnabled = true;
 	
-	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num) {
+	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num, boolean moveable) {
 		serverLoc = serverIP;
 		clientLoc = clientIP;
 		port = startPort;
 		this.skt = skt;
 		threadNum = num;
+		this.moveable = moveable;
 	}
 	
 	public void run() {
@@ -116,25 +121,37 @@ public class ServerInstance extends Thread {
 	        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
 	        		break;
 	        	case "reset":
-	        		if(moveable) {
+	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vid = new VideoDevice("/dev/video0");
-		        		vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
+	        			try {
+	        				vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Pan/tilt Reset\"");
+	        			}
 		        		vid.releaseControlList();
 		        		vid.release();
 	        		}
 	        		break;
 	        	case "pan":
-	        		if(moveable) {
+	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vd = new VideoDevice("/dev/video0");
-		        		vd.getControlList().getControl("Pan (relative)").setValue(amount);
+	        			try {
+	        				vd.getControlList().getControl("Pan (relative)").setValue(amount);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Pan (relative)\"");
+	        			}
 		        		vd.releaseControlList();
 		        		vd.release();
 	        		}
 	        		break;
 	        	case "tilt":
-	        		if(moveable) {
+	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vde = new VideoDevice("/dev/video0");
-		        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+	        			try{
+			        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Tilt (relative)\"");
+	        			}
 		        		vde.releaseControlList();
 		        		vde.release();
 	        		}
@@ -164,6 +181,17 @@ public class ServerInstance extends Thread {
 		
 		final Bin videoBin = new Bin("VideoBin");
 		
+		if(moveable) {
+			File f = new File("/usr/lib/jni/libv4l4j.so");
+			if(f.exists())
+				v4l4jEnabled = true;
+			else {
+				v4l4jEnabled = false;
+				Server.pushLog("> v4l4j not detected; camera control disabled");
+				Server.pushLog("> v4l4j can be installed from https://code.google.com/p/v4l4j/");
+			}
+		}
+		
 		// camera input
 		Element videoSrc = ElementFactory.make("v4l2src", "cam");
 		Element videoColors = ElementFactory.make("ffmpegcolorspace", "vidcolors");
@@ -175,10 +203,24 @@ public class ServerInstance extends Thread {
 		Element.linkMany(videoSrc, videoColors);
 		
 		if(moveable) {
-			Element motion = ElementFactory.make("motiondetector", "motion");
-			motion.set("draw_motion", "true");
-			motion.set("rate_limit", "500");
-			motion.set("threshold", "128");
+			boolean motionInstalled = true;
+			try {
+				ElementFactory.find("motiondetector");
+			} catch(Exception e) {
+				Server.pushLog("> MotionDetector element not detected; proceeding without.");
+				Server.pushLog("> It can be installed from https://github.com/codebrainz/motiondetector");
+				Server.pushLog("> If it is installed, make sure it was installed to /usr/local/lib/gstreamer-0.10");
+				motionInstalled = false;
+			}
+			Element motion = null;
+			if(motionInstalled) {
+				Server.pushLog("> MotionDetector element installed; enabling.");
+				motion = ElementFactory.make("motiondetector", "motion");
+				motion.set("draw_motion", "true");
+				motion.set("rate_limit", "500");
+				motion.set("threshold", "128");
+				videoBin.add(motion);
+			}
 			Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
 			Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
 			videoOverlay.set("fit-to-frame", "true");
@@ -188,8 +230,12 @@ public class ServerInstance extends Thread {
 			balance.set("saturation", "0.0");
 			balance.set("contrast", "1.5");
 			Element videoColors3 = ElementFactory.make("ffmpegcolorspace", "vidcolors3");
-			videoBin.addMany(motion, videoColors5, videoOverlay, videoColors2, balance, videoColors3);
-			Element.linkMany(videoColors, motion, videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
+			videoBin.addMany(videoColors5, videoOverlay, videoColors2, balance, videoColors3);
+			if(motionInstalled)
+				Element.linkMany(videoColors, motion, videoColors5);
+			else
+				Element.linkMany(videoColors, videoColors5);	// I know it's pointless, but it's easier to deal with
+			Element.linkMany(videoColors5, videoOverlay, videoColors2, videoScale, videoCaps, videoColors3, balance, videoColors4);
 		}
 		else
 			Element.linkMany(videoColors, videoScale, videoCaps, videoColors4);
@@ -295,7 +341,7 @@ public class ServerInstance extends Thread {
         });
         
         serverPipe.play();
-        //Gst.main();
+        serverPipe.debugToDotFile(0, "serversucc");
         return serverPipe;
 	}
 	
