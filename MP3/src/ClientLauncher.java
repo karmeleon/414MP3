@@ -182,6 +182,18 @@ public class ClientLauncher extends JFrame{
 				}
 			}
 		});
+		targetPanel.okButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: TARGET RESET");
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " reset";
+				try {
+					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 
 		pushLog("> SYS: Starting Client...");
 		pushLog("> SYS: PATH " + currpath);
