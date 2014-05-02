@@ -121,7 +121,6 @@ public class ServerInstance extends Thread {
 	        		if(moveable && v4l4jEnabled) {
 	        			VideoDevice vid = new VideoDevice("/dev/video0");
 	        			try {
-	        				// vid.getControlList().getControl("Pan/tilt Reset").setValue(1);
 	        				vid.getControlList().getControl("Pan/tilt Reset").setValue(3);
 	        			} catch(ControlException e) {
 	        				Server.pushLog("> Camera does not seem to support \"Pan/tilt Reset\"");
@@ -215,7 +214,7 @@ public class ServerInstance extends Thread {
 				motion = ElementFactory.make("motiondetector", "motion");
 				motion.set("draw_motion", "true");
 				motion.set("rate_limit", "500");
-				motion.set("threshold", "128");
+				motion.set("threshold", "64");
 				videoBin.add(motion);
 			}
 			Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");

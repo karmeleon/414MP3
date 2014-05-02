@@ -208,13 +208,13 @@ public class Client {
 
 		System.out.println("Starting with: C=" + clientLoc + ", S=" + serverLoc);
 		
-		// VIDEO
+		// TARGET
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
-		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324" ));
-		udpVideoSrc.set("uri", "udp://" + clientLoc +":" + port);
+		udpVideoSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324"));
+		udpVideoSrc.set("uri", "udp://" + clientLoc + ":" + port);
 		
 		Element videoRtcpIn = ElementFactory.make("udpsrc", "src3");
-		videoRtcpIn.set("uri", "udp://" + clientLoc +":" + (port + 1));
+		videoRtcpIn.set("uri", "udp://" + clientLoc + ":" + (port + 1));
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "snk1");
 		videoRtcpOut.set("host", serverLoc);
@@ -222,10 +222,28 @@ public class Client {
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
 		
+		// AUDIO1
 		Element udpAudioSrc = null, audioRtcpIn = null, audioRtcpOut = null, taud = null;
 		
+		// PILOT
+		Element udpVideoSrc2 = ElementFactory.make("udpsrc", "src2.1");
+		udpVideoSrc2.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324"));
+		udpVideoSrc2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + port);	// CHANGE THIS PORT
+		
+		Element videoRtcpIn2 = ElementFactory.make("udpsrc", "src2.3");
+		videoRtcpIn2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + (port + 1));	// AND THIS ONE
+		
+		Element videoRtcpOut2 = ElementFactory.make("udpsink", "sink2.1");
+		videoRtcpOut2.set("host", ClientTarget.serverLoc);
+		videoRtcpOut2.set("port", "" + (port + 5));
+		videoRtcpOut2.set("sync", "false");
+		videoRtcpOut2.set("async", "false");
+		
+		// AUDIO2
+		Element udpAudioSrc2 = null, audioRtcpIn2 = null, audioRtcpOut2 = null,  taud2 = null;
+		
 		if(attribute.equalsIgnoreCase("active")) {
-			// AUDIO
+			// AUDIO1
 			udpAudioSrc = ElementFactory.make("udpsrc", "src2");
 			udpAudioSrc.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)8000, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
 			udpAudioSrc.set("uri", "udp://" + clientLoc +":" + (port + 2));
@@ -256,9 +274,38 @@ public class Client {
 			audioRtcpOut.set("port", "" + (port + 7));
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
-			
 		}
 		
+		if(attribute.equalsIgnoreCase("active")) {	// NEED TO KNOW WHICH SERVERS ARE ACTIVE AND WHICH ARE PASSIVE INDIVIDUALLY
+			// AUDIO2
+			udpAudioSrc2 = ElementFactory.make("udpsrc", "src2.2");
+			udpAudioSrc2.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)8000, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
+			udpAudioSrc2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + (port + 2));	// THIS ONE TOO
+			
+			taud2 = ElementFactory.make("tee", "taud2");
+			Element qaud2 = ElementFactory.make("queue", "qaud2");
+			AppSink appAudioSink2 = (AppSink) ElementFactory.make("appsink", "appAudioSink2");
+			appAudioSink2.set("emit-signals", true);
+			appAudioSink2.setSync(false);
+			// ADD A QUEUE HERE
+			appAudioSink2.connect(new AppSink.NEW_BUFFER() {
+				public void newBuffer(AppSink sink) {
+					// do something here
+				}
+			});
+			clientPipe.addMany(taud2, qaud2, appAudioSink2);
+			clientPipe.addMany(udpAudioSrc2, audioRtcpIn2, audioRtcpOut2);
+			
+			audioRtcpIn2 = ElementFactory.make("udpsrc", "src2.4");
+			audioRtcpIn2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + (port + 3));	// CHANGEAROO
+			
+			audioRtcpOut2 = ElementFactory.make("udpsink", "sink2.2");
+			audioRtcpOut2.set("host", ClientTarget.serverLoc);
+			audioRtcpOut2.set("port", "" + (port + 7));		// YOU KNOW THE DRILL
+			audioRtcpOut2.set("sync", "false");
+			audioRtcpOut2.set("async", "false");
+		}
+		// VIDEO1
 		Element tvid = ElementFactory.make("tee", "tvid");
 		Element qvid = ElementFactory.make("queue", "qvid");
 		AppSink appVideoSink = (AppSink) ElementFactory.make("appsink", "appVideoSink");
@@ -277,6 +324,21 @@ public class Client {
 		clientPipe.addMany(udpVideoSrc, videoRtcpIn, videoRtcpOut);
 		Element.linkMany(udpVideoSrc, tvid, qvid, appVideoSink);
 		
+		// VIDEO2
+		Element tvid2 = ElementFactory.make("tee", "tvid2");
+		Element qvid2 = ElementFactory.make("queue", "qvid2");
+		AppSink appVideoSink2 = (AppSink) ElementFactory.make("appsink", "appVideoSink2");
+		appVideoSink2.set("emit-signals", true);
+		appVideoSink2.setSync(false);
+		// QUEUE HERE
+		appVideoSink2.connect(new AppSink.NEW_BUFFER() {
+			public void newBuffer(AppSink sink) {
+				// do someting here
+			}
+		});
+		clientPipe.addMany(tvid2, qvid2, appVideoSink2);
+		clientPipe.addMany(udpVideoSrc2, videoRtcpIn2, videoRtcpOut2);
+		Element.linkMany(udpVideoSrc2, tvid2, qvid2, appVideoSink2);
 		// VIDEO BIN
 		
 		videoBin = new Bin("videoBin");
@@ -289,21 +351,32 @@ public class Client {
 		videoSrc1Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1"));
 		Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
 		// src2
+		/*
 		Element videoSrc2 = ElementFactory.make("videotestsrc", "vidsrc2");
 		Element videoSrc2Caps = ElementFactory.make("capsfilter", "src2caps");
 		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1, width=200, height=150"));
 		Element videoColor2 = ElementFactory.make("ffmpegcolorspace", "color2");
-		
+		*/
+		Element videoDepay2 = ElementFactory.make("rtpjpegdepay", "depay2");
+		Element videoDecode2 = ElementFactory.make("jpegdec", "decode2");
+		Element videoRate2 = ElementFactory.make("videorate", "rate2");
+		Element videoSrc2Caps = ElementFactory.make("capsfilter", "src2caps");
+		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1"));
+		Element videoColor2 = ElementFactory.make("ffmpegcolorspace", "color2");
 		// mixer
 		Element videoMix = ElementFactory.make("videomixer", "vidmix");
 		Element mixedColor = ElementFactory.make("ffmpegcolorspace", "mixcolor");
 		
 		
-		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoSrc2, videoSrc2Caps, videoColor2, videoMix, mixedColor);
+		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor);
+		videoBin.addMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps);
+		// videoBin.addMany(videoSrc2, videoSrc2Caps, videoColor2);
 		Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
-		Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
+		Element.linkMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps, videoMix);
+		//Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
 		
-		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
+		videoBin.addPad(new GhostPad("sink_1", videoDepay.getStaticPad("sink")));
+		videoBin.addPad(new GhostPad("sink_2", videoDepay2.getStaticPad("sink")));
 		clientPipe.add(videoBin);
 		
 		final Bin audioBin = new Bin("audioBin");
@@ -311,17 +384,26 @@ public class Client {
 		if(attribute.equalsIgnoreCase("active")) {
 			// AUDIO BIN
 			
-			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
-			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
+			// src1
+			Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
 			
-			audioBin.addMany(audioDepay, audioSink);
-			Element.linkMany(audioDepay, audioSink);
+			// src2
+			Element audioDepay2 = ElementFactory.make("rtpL16depay", "auddepay2");
 			
-			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
+			// mixer
+			Element audioAdder = ElementFactory.make("adder", "audmix");
+			Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
+			
+			audioBin.addMany(audioDepay, audioDepay2, audioAdder, audioSink);
+			Element.linkMany(audioDepay, audioAdder, audioSink);
+			Element.linkMany(audioDepay2, audioAdder);
+			
+			audioBin.addPad(new GhostPad("sink_1", audioDepay.getStaticPad("sink")));
+			audioBin.addPad(new GhostPad("sink_2", audioDepay2.getStaticPad("sink")));
 			clientPipe.add(audioBin);
 		}
 
-		// RTPBIN
+		// RTPBIN1
 		
 		final RTPBin rtp = new RTPBin("rtp");
 		clientPipe.add(rtp);
@@ -336,17 +418,44 @@ public class Client {
 			Element.linkPads(rtp, "send_rtcp_src_1", audioRtcpOut, "sink");
 		}
 		
+		// RTPBIN2
+		
+		final RTPBin rtp2 = new RTPBin("rtp2");
+		clientPipe.add(rtp2);
+		
+		Element.linkPads(tvid2, "src1", rtp2, "recv_rtp_sink_0");
+		Element.linkPads(videoRtcpIn2, "src", rtp2, "recv_rtcp_sink_0");
+		Element.linkPads(rtp2, "send_rtcp_src_0", audioRtcpOut2, "sink");
+		
+		if(attribute.equalsIgnoreCase("active")) {	// NEED TO DIFFERENTIATE DIFFERENT ACTIVE CLIENTS
+			Element.linkPads(taud2, "src1", rtp2, "recv_rtp_sink_1");
+			Element.linkPads(audioRtcpIn2, "src", rtp2, "recv_rtcp_sink_1");
+			Element.linkPads(rtp2, "send_rtcp_src_1", audioRtcpOut2, "sink");
+		}
+		
 		// BUS
 		
 		rtp.connect(new Element.PAD_ADDED() {
 			@Override
 			public void padAdded(Element arg0, Pad arg1) {
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
-	                arg1.link(videoBin.getStaticPad("sink"));
+	                arg1.link(videoBin.getStaticPad("sink_1"));
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
-					arg1.link(audioBin.getStaticPad("sink"));
+					arg1.link(audioBin.getStaticPad("sink_1"));
 				}
-				clientPipe.debugToDotFile(1, "clientsucc");
+				clientPipe.debugToDotFile(1, "clientsucc1");
+			}
+		});
+		
+		rtp2.connect(new Element.PAD_ADDED() {
+			@Override
+			public void padAdded(Element arg0, Pad arg1) {
+				if(arg1.getName().startsWith("recv_rtp_src_0")) {
+	                arg1.link(videoBin.getStaticPad("sink_2"));
+				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
+					arg1.link(audioBin.getStaticPad("sink_2"));
+				}
+				clientPipe.debugToDotFile(1, "clientsucc2");
 			}
 		});
 		
@@ -411,7 +520,6 @@ public class Client {
 				try {
 					br = new BufferedReader(new FileReader(rscPath));
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
