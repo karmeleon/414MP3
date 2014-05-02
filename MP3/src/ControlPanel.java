@@ -20,7 +20,11 @@ public class ControlPanel extends JPanel {
 	public JButton playButton;
 	public JButton stopButton;
 	public JCheckBox muteBox;
-	
+	JButton upButton;
+	JButton downButton;
+	JButton leftButton;
+	JButton rightButton;
+	JButton okButton;
 	
 	public ControlPanel(String t, int w, int h) {
 		super();
@@ -69,7 +73,47 @@ public class ControlPanel extends JPanel {
 		if (title.equalsIgnoreCase("target")) {
 			ImagePanel dpad = new ImagePanel("dpad.png");
 			dpad.setPreferredSize(new Dimension(110,110));
+			dpad.setLayout(new BorderLayout());
 			rightPanel.add(dpad);
+			
+			upButton = new JButton();
+			upButton.setBackground(Color.yellow);
+			upButton.setPreferredSize(new Dimension(0, 36));
+			dpad.add(upButton, BorderLayout.PAGE_START);
+			upButton.setOpaque(false);
+			upButton.setContentAreaFilled(false);
+			upButton.setBorderPainted(false);
+			
+			okButton = new JButton();
+			okButton.setBackground(Color.black);
+			dpad.add(okButton, BorderLayout.CENTER);
+			okButton.setOpaque(false);
+			okButton.setContentAreaFilled(false);
+			okButton.setBorderPainted(false);
+			
+			leftButton = new JButton();
+			leftButton.setBackground(Color.red);
+			leftButton.setPreferredSize(new Dimension(36, 0));
+			dpad.add(leftButton, BorderLayout.LINE_START);
+			leftButton.setOpaque(false);
+			leftButton.setContentAreaFilled(false);
+			leftButton.setBorderPainted(false);
+			
+			rightButton = new JButton();
+			rightButton.setBackground(Color.green);
+			rightButton.setPreferredSize(new Dimension(36, 0));
+			dpad.add(rightButton, BorderLayout.LINE_END);
+			rightButton.setOpaque(false);
+			rightButton.setContentAreaFilled(false);
+			rightButton.setBorderPainted(false);
+			
+			downButton = new JButton();
+			downButton.setBackground(Color.gray);
+			downButton.setPreferredSize(new Dimension(0,36));
+			dpad.add(downButton, BorderLayout.PAGE_END);
+			downButton.setOpaque(false);
+			downButton.setContentAreaFilled(false);
+			downButton.setBorderPainted(false);
 		}
 		
 		JPanel dataPanel = new JPanel();

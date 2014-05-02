@@ -61,7 +61,7 @@ public class ClientLauncher extends JFrame{
 		
 		vc = new VideoComponent();
 		vc.setPreferredSize(new Dimension(1000, 640));
-		vc.setBackground(Color.green);
+		vc.setBackground(Color.black);
 		videoPanel.add(vc);
 		
 		JPanel debugPanel = new JPanel();
