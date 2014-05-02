@@ -98,6 +98,7 @@ public class ClientLauncher extends JFrame{
 		ControlPanel targetPanel = new ControlPanel("TARGET", 600, 160);
 		botPanel.add(targetPanel, BorderLayout.LINE_END);
 		
+		
 		/*
 		makeCtrlButton("Play");
 		buttons.get("Play").addActionListener(new ActionListener() {
