@@ -34,9 +34,11 @@ public class ClientLauncher extends JFrame{
 	VideoComponent vc;
 	VideoComponent pip;
 	
-	ControlPanel pilotPanel;
-	ControlPanel targetPanel;
+	static ControlPanel pilotPanel;
+	static ControlPanel targetPanel;
 	
+	static Timer pilotTimer;
+	static Timer targetTimer;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
@@ -59,9 +61,7 @@ public class ClientLauncher extends JFrame{
 		videoPanel = new JPanel();
 		videoPanel.setPreferredSize(new Dimension(1000, 640));
 		videoPanel.setBackground(Color.yellow);
-		// videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
 		videoPanel.setLayout(null);
-		// videoPanel.setBackground(new Color(0,0,0));
 		mainContainer.add(videoPanel);
 		
 		pip = new VideoComponent();
@@ -82,10 +82,6 @@ public class ClientLauncher extends JFrame{
 		lp.add(vc, new Integer(25));
 		lp.add(pip, new Integer(50));
 		videoPanel.add(lp);
-		// videoPanel.add(vc, new Integer(0));
-		// videoPanel.add(pip, new Integer(1));
-		// videoPanel.setComponentZOrder(pip, 0);
-		// videoPanel.setComponentZOrder(vc, -1);
 		
 		JPanel debugPanel = new JPanel();
 		debugPanel.setPreferredSize(new Dimension(200, 640));
@@ -256,63 +252,6 @@ public class ClientLauncher extends JFrame{
 		setVisible(true);
 	}
 	
-
-	/*
-	monitor = new Timer();
-	monitor.scheduleAtFixedRate(new TimerTask() {
-		public void run() {
-			double vsizesum = 0;
-			double asizesum = 0;
-			double vtimesum = 0;
-			double atimesum = 0;
-			double vcount = 0;
-			double acount = 0;
-			
-			if (Client.videoQ != null && Client.audioQ != null && Client.videoQ.size() > 0 && Client.audioQ.size() > 0) {
-				vcount = Client.videoQ.size();
-				acount = Client.audioQ.size();
-				
-				while (Client.videoQ.peek() != null) {
-					// mon1.setText("" + Client.videoQ.peek().getFrameSize());
-					vsizesum+= Client.videoQ.peek().getFrameSize();
-					vtimesum+= Client.videoQ.peek().getFrameTime();
-					Client.videoQ.poll();
-				}
-				while (Client.audioQ.peek() != null) {
-					// mon1.setText("" + Client.videoQ.peek().getFrameSize());
-					asizesum+= Client.audioQ.peek().getFrameSize();
-					atimesum+= Client.audioQ.peek().getFrameTime();
-					Client.audioQ.poll();
-				}
-				
-				int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
-				int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
-				
-				mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
-				// DecimalFormat df = new DecimalFormat("0.00##");
-				// String restime = df.format(vtimeAVG - atimeAVG);
-				int skew = (int) (vtimeAVG - atimeAVG);
-				if (skew > 10000) skew = 0;
-				mon2.setText("" + skew);
-			}
-			else {
-				if (Client.videoQ != null && Client.videoQ.size() > 0) {
-					vcount = Client.videoQ.size();
-					while (Client.videoQ.peek() != null) {
-						vsizesum+= Client.videoQ.peek().getFrameSize();
-						vtimesum+= Client.videoQ.peek().getFrameTime();
-						Client.videoQ.poll();
-					}
-					
-					int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
-					mon1.setText("" + (vsizeAVG * 4));
-					mon2.setText("N/A");
-				}
-			}
-		}
-	}, 0, 250);
-	*/
-	
 	private void scanResource() throws IOException {
 		BufferedReader br = null;
 		String rscPath = "resource.txt";
@@ -336,6 +275,118 @@ public class ClientLauncher extends JFrame{
 			pushLog("> RSRC: BAD VALUE");
 		}
 		br.close();
+	}
+	
+	public static void startPilotMonitoring() {
+		pilotTimer = new Timer();
+		pilotTimer.scheduleAtFixedRate(new TimerTask() {
+			public void run() {
+				double vsizesum = 0;
+				double asizesum = 0;
+				double vtimesum = 0;
+				double atimesum = 0;
+				double vcount = 0;
+				double acount = 0;
+				
+				if (ClientPilot.videoQ != null && ClientPilot.audioQ != null && ClientPilot.videoQ.size() > 0 && ClientPilot.audioQ.size() > 0) {
+					vcount = ClientPilot.videoQ.size();
+					acount = ClientPilot.audioQ.size();
+					
+					while (ClientPilot.videoQ.peek() != null) {
+						// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+						vsizesum+= ClientPilot.videoQ.peek().getFrameSize();
+						vtimesum+= ClientPilot.videoQ.peek().getFrameTime();
+						ClientPilot.videoQ.poll();
+					}
+					while (ClientPilot.audioQ.peek() != null) {
+						// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+						asizesum+= ClientPilot.audioQ.peek().getFrameSize();
+						atimesum+= ClientPilot.audioQ.peek().getFrameTime();
+						ClientPilot.audioQ.poll();
+					}
+					
+					int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+					int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
+					
+					pilotPanel.mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
+					// DecimalFormat df = new DecimalFormat("0.00##");
+					// String restime = df.format(vtimeAVG - atimeAVG);
+					int skew = (int) (vtimeAVG - atimeAVG);
+					if (skew > 10000) skew = 0;
+					pilotPanel.mon2.setText("" + skew);
+				}
+				else {
+					if (ClientPilot.videoQ != null && ClientPilot.videoQ.size() > 0) {
+						vcount = ClientPilot.videoQ.size();
+						while (ClientPilot.videoQ.peek() != null) {
+							vsizesum+= ClientPilot.videoQ.peek().getFrameSize();
+							vtimesum+= ClientPilot.videoQ.peek().getFrameTime();
+							ClientPilot.videoQ.poll();
+						}
+						
+						int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+						pilotPanel.mon1.setText("" + (vsizeAVG * 4));
+						pilotPanel.mon2.setText("N/A");
+					}
+				}
+			}
+		}, 0, 250);
+	}
+		
+	public static void startTargetMonitoring() {
+		targetTimer = new Timer();
+		targetTimer.scheduleAtFixedRate(new TimerTask() {
+			public void run() {
+				double vsizesum = 0;
+				double asizesum = 0;
+				double vtimesum = 0;
+				double atimesum = 0;
+				double vcount = 0;
+				double acount = 0;
+				
+				if (ClientTarget.videoQ != null && ClientTarget.audioQ != null && ClientTarget.videoQ.size() > 0 && ClientTarget.audioQ.size() > 0) {
+					vcount = ClientTarget.videoQ.size();
+					acount = ClientTarget.audioQ.size();
+					
+					while (ClientTarget.videoQ.peek() != null) {
+						// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+						vsizesum+= ClientTarget.videoQ.peek().getFrameSize();
+						vtimesum+= ClientTarget.videoQ.peek().getFrameTime();
+						ClientTarget.videoQ.poll();
+					}
+					while (ClientTarget.audioQ.peek() != null) {
+						// mon1.setText("" + Client.videoQ.peek().getFrameSize());
+						asizesum+= ClientTarget.audioQ.peek().getFrameSize();
+						atimesum+= ClientTarget.audioQ.peek().getFrameTime();
+						ClientTarget.audioQ.poll();
+					}
+					
+					int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+					int asizeAVG = (int) (asizesum / acount); double atimeAVG = atimesum / acount;
+					
+					targetPanel.mon1.setText("" + ((vsizeAVG + asizeAVG) * 4));
+					// DecimalFormat df = new DecimalFormat("0.00##");
+					// String restime = df.format(vtimeAVG - atimeAVG);
+					int skew = (int) (vtimeAVG - atimeAVG);
+					if (skew > 10000) skew = 0;
+					targetPanel.mon2.setText("" + skew);
+				}
+				else {
+					if (ClientTarget.videoQ != null && ClientTarget.videoQ.size() > 0) {
+						vcount = ClientTarget.videoQ.size();
+						while (ClientTarget.videoQ.peek() != null) {
+							vsizesum+= ClientTarget.videoQ.peek().getFrameSize();
+							vtimesum+= ClientTarget.videoQ.peek().getFrameTime();
+							ClientTarget.videoQ.poll();
+						}
+						
+						int vsizeAVG = (int) (vsizesum / vcount); double vtimeAVG = vtimesum / vcount;
+						targetPanel.mon1.setText("" + (vsizeAVG * 4));
+						targetPanel.mon2.setText("N/A");
+					}
+				}
+			}
+		}, 0, 250);
 	}
 	
 	private void makeCtrlButton(String name) {
