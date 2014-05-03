@@ -121,7 +121,7 @@ public class ClientLauncher extends JFrame{
 				pushLog("> SYS: REQUEST " + pilotPanel.typeCombo.getSelectedItem() + " " + bandwidth);
 				Thread clientThread = new Thread() {
 					public void run() {
-						String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 								+ " " + bandwidth + " play" + " pilot";
 						try {
 							ClientPilot.handleRequest(pip, settings, textArea, pilotPanel.netAddress.getText());
@@ -140,7 +140,7 @@ public class ClientLauncher extends JFrame{
 				pushLog("> CTRL: PILOT CONNECTING");
 				pushLog("> SYS: REQUEST " + pilotPanel.typeCombo.getSelectedItem() + " " + bandwidth);
 				
-				String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " stop" + " pilot";
 				try {
 					ClientPilot.handleRequest(pip, settings, textArea, pilotPanel.netAddress.getText());
@@ -166,7 +166,7 @@ public class ClientLauncher extends JFrame{
 				pushLog("> SYS: REQUEST " + targetPanel.typeCombo.getSelectedItem() + " " + bandwidth);
 				Thread clientThread = new Thread() {
 					public void run() {
-						String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 								+ " " + bandwidth + " play" + " target";
 						try {
 							ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
@@ -186,7 +186,7 @@ public class ClientLauncher extends JFrame{
 				pushLog("> CTRL: TARGET CONNECTING");
 				pushLog("> SYS: REQUEST " + targetPanel.typeCombo.getSelectedItem() + " " + bandwidth);
 				
-				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " stop" + " target";
 				try {
 					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
@@ -206,7 +206,7 @@ public class ClientLauncher extends JFrame{
 		targetPanel.upButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET UP");
-				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " up" + " target";
 				try {
 					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
@@ -218,7 +218,7 @@ public class ClientLauncher extends JFrame{
 		targetPanel.downButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET DOWN");
-				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " down" + " target";
 				try {
 					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
@@ -230,7 +230,7 @@ public class ClientLauncher extends JFrame{
 		targetPanel.leftButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET LEFT");
-				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " left" + " target";
 				try {
 					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
@@ -242,7 +242,7 @@ public class ClientLauncher extends JFrame{
 		targetPanel.rightButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET RIGHT");
-				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " right" + " target";
 				try {
 					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
@@ -254,7 +254,7 @@ public class ClientLauncher extends JFrame{
 		targetPanel.okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET RESET");
-				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Active" : "Passive")
 						+ " " + bandwidth + " reset" + " target";
 				try {
 					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
