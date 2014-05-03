@@ -69,14 +69,23 @@ public class ClientLauncher extends JFrame{
 		pip.setLocation(new Point(0,0));
 		pip.setLayout(null);
 		pip.setBackground(Color.green);
-		videoPanel.add(pip);
 		
 		vc = new VideoComponent();
 		vc.setSize(new Dimension(1000, 640));
 		vc.setLocation(new Point(0,0));
 		vc.setLayout(null);
 		vc.setBackground(Color.black);
-		videoPanel.add(vc);
+		
+		JLayeredPane lp = new JLayeredPane();
+		lp.setPreferredSize(new Dimension(1000, 640));
+		lp.setSize(new Dimension(1000, 640));
+		lp.add(vc, new Integer(25));
+		lp.add(pip, new Integer(50));
+		videoPanel.add(lp);
+		// videoPanel.add(vc, new Integer(0));
+		// videoPanel.add(pip, new Integer(1));
+		// videoPanel.setComponentZOrder(pip, 0);
+		// videoPanel.setComponentZOrder(vc, -1);
 		
 		JPanel debugPanel = new JPanel();
 		debugPanel.setPreferredSize(new Dimension(200, 640));
