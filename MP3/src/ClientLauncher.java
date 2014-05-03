@@ -84,8 +84,7 @@ public class ClientLauncher extends JFrame{
 		buttons.get("Refresh").addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				pushLog("> RSRC: UPDATED");
-				ClientTarget.updateResource();
-				ClientPilot.updateResource();
+				Client.updateResource();
 			}
 		});
 		
@@ -104,9 +103,9 @@ public class ClientLauncher extends JFrame{
 				Thread clientThread = new Thread() {
 					public void run() {
 						String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-								+ " " + bandwidth + " play";
+								+ " " + bandwidth + " play" + " pilot";
 						try {
-							ClientPilot.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
+							Client.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -122,9 +121,9 @@ public class ClientLauncher extends JFrame{
 				pushLog("> SYS: REQUEST " + pilotPanel.typeCombo.getSelectedItem() + " " + bandwidth);
 				
 				String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " play";
+						+ " " + bandwidth + " stop" + " pilot";
 				try {
-					ClientPilot.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -141,9 +140,9 @@ public class ClientLauncher extends JFrame{
 				Thread clientThread = new Thread() {
 					public void run() {
 						String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-								+ " " + bandwidth + " play";
+								+ " " + bandwidth + " play" + " target";
 						try {
-							ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+							Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -159,9 +158,9 @@ public class ClientLauncher extends JFrame{
 				pushLog("> SYS: REQUEST " + targetPanel.typeCombo.getSelectedItem() + " " + bandwidth);
 				
 				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " play";
+						+ " " + bandwidth + " stop" + " target";
 				try {
-					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -172,9 +171,9 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET UP");
 				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " up";
+						+ " " + bandwidth + " up" + " target";
 				try {
-					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -184,9 +183,9 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET DOWN");
 				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " down";
+						+ " " + bandwidth + " down" + " target";
 				try {
-					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -196,9 +195,9 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET LEFT");
 				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " left";
+						+ " " + bandwidth + " left" + " target";
 				try {
-					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -208,9 +207,9 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET RIGHT");
 				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " right";
+						+ " " + bandwidth + " right" + " target";
 				try {
-					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -220,9 +219,9 @@ public class ClientLauncher extends JFrame{
 			public void actionPerformed(ActionEvent arg0) {
 				pushLog("> CTRL: TARGET RESET");
 				String settings = "" + (targetPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
-						+ " " + bandwidth + " reset";
+						+ " " + bandwidth + " reset" + " target";
 				try {
-					ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+					Client.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}

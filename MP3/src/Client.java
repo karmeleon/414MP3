@@ -33,113 +33,107 @@ import org.gstreamer.swing.VideoComponent;
 import org.json.JSONObject;
 
 public class Client {
-	static PrintWriter out;
 	static JTextArea textArea;
-	static Pipeline clientPipe;
-	static Bin videoBin;
+	static String clientLoc;
+	static int connectionType;
 	
-	static String resolution = "";
+	static PrintWriter targetOut;
+	static PrintWriter pilotOut;
+	
+	static Pipeline targetClientPipe;
+	static Pipeline pilotClientPipe;
+	static Bin targetVideoBin;
+	static Bin pilotVideoBin;
+	
 	static String attribute = "";
 	static String request = "";
+	
+	static String targetServerLoc = "localhost";
+	static String pilotServerLoc = "localhost";
+	
 	static Queue<FrameInfo> videoQ;
 	static Queue<FrameInfo> audioQ;
 	static Queue<CompareInfo> jointQ;
 	
-	static String clientLoc;
-	static String serverLoc = "localhost";
-	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log, String addr) throws UnknownHostException, IOException {
 		textArea = log;
-		
+	
 		String[] s = settings.split(" ");
-		resolution = s[0];               // 240p/480p
-		attribute = s[1];                // Passive/Active
-		// clientbw = Integer.parseInt(s[2]); // Some amount
-		request = s[3];
+		connectionType = s[3].equalsIgnoreCase("pilot") ? 0 : 1; // pilot = 0 / target = 1
+		attribute = s[0]; // Passive/Active
+		request = s[2];   // Play/Stop
 		
-		if (clientPipe == null) {
+		if (pilotClientPipe == null && connectionType == 0) {
 			// Play -> connect and play
 			// Pause -> nothing
 			// Stop -> Nothing
 			if (request.equalsIgnoreCase("play")) {
-				connectAndPlay(vc, settings, addr);
+				pilotServerLoc = addr;
+				connectAndPlay(connectionType, vc, settings, addr);
+				/*
 				videoQ = new LinkedList<FrameInfo>();
 				audioQ = new LinkedList<FrameInfo>();
 				jointQ = new LinkedList<CompareInfo>();
+				*/
+			}
+		}
+		else if (targetClientPipe == null && connectionType == 1) {
+			if (request.equalsIgnoreCase("play")) {
+				targetServerLoc = addr;
+				connectAndPlay(connectionType, vc, settings, addr);
+				/*
+				videoQ = new LinkedList<FrameInfo>();
+				audioQ = new LinkedList<FrameInfo>();
+				jointQ = new LinkedList<CompareInfo>();
+				*/
 			}
 		}
 		else {
-			// Play -> if playing then nothing || if paused then resume 
-			// Pause -> if playing then pause || if  paused then nothing
-			// Stop -> Signal kill and purge pipes
-			if (request.equalsIgnoreCase("play")) {
-				commandResume();
-				videoQ = new LinkedList<FrameInfo>();
-				audioQ = new LinkedList<FrameInfo>();
-				jointQ = new LinkedList<CompareInfo>();
-			}
-			else if (request.equalsIgnoreCase("pause")) {
-				commandPause();
-			}
-			else if (request.equalsIgnoreCase("rewind")) {
-				commandRewind();
-				videoQ = new LinkedList<FrameInfo>();
-				audioQ = new LinkedList<FrameInfo>();
-				jointQ = new LinkedList<CompareInfo>();
-			}
-			else if (request.equalsIgnoreCase("forward" )) {
-				commandForward();
-				videoQ = new LinkedList<FrameInfo>();
-				audioQ = new LinkedList<FrameInfo>();
-				jointQ = new LinkedList<CompareInfo>();
-			}
-			else { // request = stop
-				commandStop(vc);
+			if (request.equalsIgnoreCase("stop")) {
+				commandStop(connectionType, vc);
 			}
 		}
 		vc.setPreferredSize(new Dimension(1200, 640));
 	}
 	
-	public static void commandForward() {
-		JSONObject json_pause = new JSONObject();
-		json_pause.put("command", "ff");
-		out.println(json_pause.toString());
+	public static void commandStop(int t, VideoComponent vc) {
+		// commandPause();
+		if (connectionType == 0) {
+			pilotClientPipe.setState(State.PAUSED);
+			pilotVideoBin.setState(State.PAUSED);
+			pilotVideoBin.unlink(vc.getElement());
+			pilotVideoBin.remove(vc.getElement());
+
+			pilotClientPipe = null;
+			JSONObject json_pause = new JSONObject();
+			json_pause.put("command", "pause");
+			pilotOut.println(json_pause.toString());
+			
+			JSONObject json_stop = new JSONObject();
+			json_stop.put("command", "stop");
+			pilotOut.println(json_stop.toString());
+		}
+		else if (connectionType == 1) {
+			targetClientPipe.setState(State.PAUSED);
+			targetVideoBin.setState(State.PAUSED);
+			targetVideoBin.unlink(vc.getElement());
+			targetVideoBin.remove(vc.getElement());
+
+			targetClientPipe = null;
+			JSONObject json_pause = new JSONObject();
+			json_pause.put("command", "pause");
+			targetOut.println(json_pause.toString());
+			
+			JSONObject json_stop = new JSONObject();
+			json_stop.put("command", "stop");
+			targetOut.println(json_stop.toString());
+		}
 	}
-	
-	public static void commandRewind() {
-		JSONObject json_pause = new JSONObject();
-		json_pause.put("command", "rw");
-		out.println(json_pause.toString());
-	}
-	
-	public static void commandStop(VideoComponent vc) {
-		commandPause();
+
+	private static void connectAndPlay(int t, VideoComponent vc, String settings, String addr) throws UnknownHostException, IOException {
+		if (t == 0) pilotServerLoc = addr;
+		if (t == 1) targetServerLoc = addr;
 		
-		clientPipe.setState(State.PAUSED);
-		videoBin.setState(State.PAUSED);
-		videoBin.unlink(vc.getElement());
-		videoBin.remove(vc.getElement());
-
-		clientPipe = null;
-		JSONObject json_pause = new JSONObject();
-		json_pause.put("command", "stop");
-		out.println(json_pause.toString());
-	}
-	
-	public static void commandResume() {
-		JSONObject json_pause = new JSONObject();
-		json_pause.put("command", "play");
-		out.println(json_pause.toString());
-	}
-	
-	public static void commandPause() {
-		JSONObject json_pause = new JSONObject();
-		json_pause.put("command", "pause");
-		out.println(json_pause.toString());
-	}
-
-	private static void connectAndPlay(VideoComponent vc, String settings, String addr) throws UnknownHostException, IOException {
-		// find this ip
 		Socket skt = null;
 		if (addr.length() > 0) {
 			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
@@ -156,18 +150,22 @@ public class Client {
 					}
 				}
 			}
-			serverLoc = addr;
-			skt = new Socket(serverLoc, 45000);
+			
+			if (t == 0) skt = new Socket(pilotServerLoc, 45000);
+			if (t == 1) skt = new Socket(targetServerLoc, 45000);
 		}
 		else if (addr.length() == 0) {
 			clientLoc = "127.0.0.1";
-			serverLoc = "127.0.0.1";
+			if (t == 0) pilotServerLoc = "127.0.0.1";
+			if (t == 1) targetServerLoc = "127.0.0.1";
 			skt = new Socket("localhost", 45000);
 		}
 		
 		skt.setReuseAddress(true);
         BufferedReader in = new BufferedReader(new InputStreamReader(skt.getInputStream()));
-        out = new PrintWriter(skt.getOutputStream(), true);
+        PrintWriter out = new PrintWriter(skt.getOutputStream(), true);
+        if (t == 0) pilotOut = out;
+        if (t == 1) targetOut = out;
 
         JSONObject portNeg = new JSONObject(in.readLine());
         int port = portNeg.getInt("port");
@@ -178,7 +176,7 @@ public class Client {
         out.println(json_settings.toString());
         
         pushLog("> SYS: CNCT SUCCESS");
-        startStreaming(vc, settings, port);
+        startStreaming(t, vc, settings, port);
         
         pushLog("> CTRL: LISTENING FOR COMMANDS");
         Scanner s = new Scanner(System.in);
@@ -200,13 +198,20 @@ public class Client {
         skt.close();
 	}
 	
-	private static void startStreaming(final VideoComponent vc, String settings, int port) {
+	private static void startStreaming(final int t, final VideoComponent vc, String settings, int port) {
 		Gst.init();
+		Pipeline clientPipe = null;
+		if (t == 0)
+			clientPipe = pilotClientPipe;
+		else
+			clientPipe = targetClientPipe;
+		
 		clientPipe = new Pipeline("pipeline");
 		pushLog("> CTRL: " + "PLAY");
 		pushLog("> SYS: " + " INIT STREAM");
-
-		System.out.println("Starting with: C=" + clientLoc + ", S=" + serverLoc);
+		
+		if (t == 0) System.out.println("Starting with: C=" + clientLoc + ", S=" + pilotServerLoc);
+		if (t == 1) System.out.println("Starting with: C=" + clientLoc + ", S=" + targetServerLoc);
 		
 		// TARGET
 		Element udpVideoSrc = ElementFactory.make("udpsrc", "src1");
@@ -217,7 +222,8 @@ public class Client {
 		videoRtcpIn.set("uri", "udp://" + clientLoc + ":" + (port + 1));
 		
 		Element videoRtcpOut = ElementFactory.make("udpsink", "snk1");
-		videoRtcpOut.set("host", serverLoc);
+		if (t == 0) videoRtcpOut.set("host", pilotServerLoc);
+		if (t == 1) videoRtcpOut.set("host", targetServerLoc);
 		videoRtcpOut.set("port", "" + (port + 5));
 		videoRtcpOut.set("sync", "false");
 		videoRtcpOut.set("async", "false");
@@ -228,13 +234,13 @@ public class Client {
 		// PILOT
 		Element udpVideoSrc2 = ElementFactory.make("udpsrc", "src2.1");
 		udpVideoSrc2.setCaps(Caps.fromString("application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)JPEG, payload=(int)96, ssrc=(uint)2156703816, clock-base=(uint)1678649553, seqnum-base=(uint)31324"));
-		udpVideoSrc2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + port);	// CHANGE THIS PORT
+		udpVideoSrc2.set("uri", "udp://" + targetServerLoc + ":" + port);	// CHANGE THIS PORT
 		
 		Element videoRtcpIn2 = ElementFactory.make("udpsrc", "src2.3");
-		videoRtcpIn2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + (port + 1));	// AND THIS ONE
+		videoRtcpIn2.set("uri", "udp://" + targetServerLoc + ":" + (port + 1));	// AND THIS ONE
 		
 		Element videoRtcpOut2 = ElementFactory.make("udpsink", "sink2.1");
-		videoRtcpOut2.set("host", ClientTarget.serverLoc);
+		videoRtcpOut2.set("host", targetServerLoc);
 		videoRtcpOut2.set("port", "" + (port + 5));
 		videoRtcpOut2.set("sync", "false");
 		videoRtcpOut2.set("async", "false");
@@ -253,6 +259,7 @@ public class Client {
 			AppSink appAudioSink = (AppSink) ElementFactory.make("appsink", "appAudioSink");
 			appAudioSink.set("emit-signals", true); 
 			appAudioSink.setSync(false);
+			
 			audioQ = new LinkedList<FrameInfo>();
 			appAudioSink.connect(new AppSink.NEW_BUFFER() { 
 				public void newBuffer(AppSink sink) {
@@ -270,7 +277,8 @@ public class Client {
 			audioRtcpIn.set("uri", "udp://" + clientLoc +":" + (port + 3));
 			
 			audioRtcpOut = ElementFactory.make("udpsink", "snk2");
-			audioRtcpOut.set("host", serverLoc);
+			if (t == 0) audioRtcpOut.set("host", pilotServerLoc);
+			if (t == 1) audioRtcpOut.set("host", targetServerLoc);
 			audioRtcpOut.set("port", "" + (port + 7));
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
@@ -280,7 +288,7 @@ public class Client {
 			// AUDIO2
 			udpAudioSrc2 = ElementFactory.make("udpsrc", "src2.2");
 			udpAudioSrc2.setCaps(Caps.fromString("application/x-rtp, media=(string)audio, clock-rate=(int)8000, encoding-name=(string)L16, encoding-params=(string)2, channels=(int)2, payload=(int)96, ssrc=(uint)3489550614, clock-base=(uint)2613725642, seqnum-base=(uint)1704"));
-			udpAudioSrc2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + (port + 2));	// THIS ONE TOO
+			udpAudioSrc2.set("uri", "udp://" + targetServerLoc + ":" + (port + 2));	// THIS ONE TOO
 			
 			taud2 = ElementFactory.make("tee", "taud2");
 			Element qaud2 = ElementFactory.make("queue", "qaud2");
@@ -297,10 +305,10 @@ public class Client {
 			clientPipe.addMany(udpAudioSrc2, audioRtcpIn2, audioRtcpOut2);
 			
 			audioRtcpIn2 = ElementFactory.make("udpsrc", "src2.4");
-			audioRtcpIn2.set("uri", "udp://" + ClientTarget.serverLoc + ":" + (port + 3));	// CHANGEAROO
+			audioRtcpIn2.set("uri", "udp://" + targetServerLoc + ":" + (port + 3));	// CHANGEAROO
 			
 			audioRtcpOut2 = ElementFactory.make("udpsink", "sink2.2");
-			audioRtcpOut2.set("host", ClientTarget.serverLoc);
+			audioRtcpOut2.set("host", targetServerLoc);
 			audioRtcpOut2.set("port", "" + (port + 7));		// YOU KNOW THE DRILL
 			audioRtcpOut2.set("sync", "false");
 			audioRtcpOut2.set("async", "false");
@@ -341,7 +349,8 @@ public class Client {
 		Element.linkMany(udpVideoSrc2, tvid2, qvid2, appVideoSink2);
 		// VIDEO BIN
 		
-		videoBin = new Bin("videoBin");
+		if (t == 0) pilotVideoBin = new Bin("videoBin");
+		if (t == 1) targetVideoBin = new Bin("videoBin");
 		
 		// src1
 		Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
@@ -367,17 +376,31 @@ public class Client {
 		Element videoMix = ElementFactory.make("videomixer", "vidmix");
 		Element mixedColor = ElementFactory.make("ffmpegcolorspace", "mixcolor");
 		
+		if (t == 0) {
+			pilotVideoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor);
+			pilotVideoBin.addMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps);
+			// videoBin.addMany(videoSrc2, videoSrc2Caps, videoColor2);
+			Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
+			Element.linkMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps, videoMix);
+			//Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
+			
+			pilotVideoBin.addPad(new GhostPad("sink_1", videoDepay.getStaticPad("sink")));
+			pilotVideoBin.addPad(new GhostPad("sink_2", videoDepay2.getStaticPad("sink")));
+			clientPipe.add(pilotVideoBin);
+		}
+		else if (t == 1) {
+			targetVideoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor);
+			targetVideoBin.addMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps);
+			// videoBin.addMany(videoSrc2, videoSrc2Caps, videoColor2);
+			Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
+			Element.linkMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps, videoMix);
+			//Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
+			
+			targetVideoBin.addPad(new GhostPad("sink_1", videoDepay.getStaticPad("sink")));
+			targetVideoBin.addPad(new GhostPad("sink_2", videoDepay2.getStaticPad("sink")));
+			clientPipe.add(targetVideoBin);
+		}
 		
-		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor);
-		videoBin.addMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps);
-		// videoBin.addMany(videoSrc2, videoSrc2Caps, videoColor2);
-		Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
-		Element.linkMany(videoDepay2, videoDecode2, videoRate2, videoColor2, videoSrc2Caps, videoMix);
-		//Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
-		
-		videoBin.addPad(new GhostPad("sink_1", videoDepay.getStaticPad("sink")));
-		videoBin.addPad(new GhostPad("sink_2", videoDepay2.getStaticPad("sink")));
-		clientPipe.add(videoBin);
 		
 		final Bin audioBin = new Bin("audioBin");
 		
@@ -439,11 +462,13 @@ public class Client {
 			@Override
 			public void padAdded(Element arg0, Pad arg1) {
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
-	                arg1.link(videoBin.getStaticPad("sink_1"));
+	                if (t == 0) arg1.link(pilotVideoBin.getStaticPad("sink_1"));
+	                if (t == 1) arg1.link(targetVideoBin.getStaticPad("sink_1"));
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
 					arg1.link(audioBin.getStaticPad("sink_1"));
 				}
-				clientPipe.debugToDotFile(1, "clientsucc1");
+				if (t == 0) pilotClientPipe.debugToDotFile(1, "clientsucc1");
+				if (t == 1) targetClientPipe.debugToDotFile(1, "clientsucc1");
 			}
 		});
 		
@@ -451,11 +476,13 @@ public class Client {
 			@Override
 			public void padAdded(Element arg0, Pad arg1) {
 				if(arg1.getName().startsWith("recv_rtp_src_0")) {
-	                arg1.link(videoBin.getStaticPad("sink_2"));
+	                if (t == 0) arg1.link(pilotVideoBin.getStaticPad("sink_2"));
+	                if (t == 1) arg1.link(targetVideoBin.getStaticPad("sink_2"));
 				} else if(arg1.getName().startsWith("recv_rtp_src_1") && attribute.equalsIgnoreCase("active")) {
 					arg1.link(audioBin.getStaticPad("sink_2"));
 				}
-				clientPipe.debugToDotFile(1, "clientsucc2");
+				if (t == 0) pilotClientPipe.debugToDotFile(1, "clientsucc2");
+				if (t == 0) targetClientPipe.debugToDotFile(1, "clientsucc2");
 			}
 		});
 		
@@ -464,18 +491,21 @@ public class Client {
         bus.connect(new Bus.ERROR() {
             public void errorMessage(GstObject source, int code, String message) {
                 pushLog("> GSTREAMER ERROR: code=" + code + " message=" + message);
-                clientPipe.debugToDotFile(1, "clienterr");
+                if (t == 0) pilotClientPipe.debugToDotFile(1, "clienterr");
+                if (t == 1) targetClientPipe.debugToDotFile(1, "clienterr");
             }
         });
         bus.connect(new Bus.EOS() {
 
             public void endOfStream(GstObject source) {
-            	clientPipe.setState(State.NULL);
+            	if (t == 0) pilotClientPipe.setState(State.NULL);
+            	if (t == 1) targetClientPipe.setState(State.NULL);
                 System.out.println("EOS");
             }
         });
 		
-        videoBin.add(vc.getElement());
+        if (t == 0) pilotVideoBin.add(vc.getElement());
+        if (t == 1) targetVideoBin.add(vc.getElement());
         
         AppSink appJointSink = (AppSink) ElementFactory.make("appsink", "appJointSink");
 		appJointSink.set("emit-signals", true); 
@@ -500,7 +530,8 @@ public class Client {
         
         Thread videoThread = new Thread() {
         	public void run() {
-        		clientPipe.setState(org.gstreamer.State.PLAYING);
+        		if (t == 0) pilotClientPipe.setState(org.gstreamer.State.PLAYING);
+        		if (t == 1) targetClientPipe.setState(org.gstreamer.State.PLAYING);
         	}
         };
         videoThread.start();
@@ -508,37 +539,36 @@ public class Client {
 	}
 	
 	public static void updateResource() {
-		if (clientPipe != null) {
-			int bandwidth = 0;
-			BufferedReader br = null;
-			String rscPath = "c_resource.txt";
+		int bandwidth = 0;
+		BufferedReader br = null;
+		String rscPath = "c_resource.txt";
+		try {
+			br = new BufferedReader(new FileReader(rscPath));
+		} catch (FileNotFoundException e1) {
+			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+			rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
 			try {
 				br = new BufferedReader(new FileReader(rscPath));
-			} catch (FileNotFoundException e1) {
-				String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-				rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
-				try {
-					br = new BufferedReader(new FileReader(rscPath));
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				}
-			}
-			try {
-				bandwidth = Integer.parseInt(br.readLine());
-			} catch (NumberFormatException e) {
-			} catch (IOException e) {
-			}
-			try {
-				br.close();
-			} catch (IOException e) {
+			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 			}
-			
-			JSONObject json_bandwidth = new JSONObject();
-	        json_bandwidth.put("command", "" + bandwidth);
-	        out.println(json_bandwidth.toString());
-	        pushLog("> RSRC: REQ BW " + bandwidth);
 		}
+		try {
+			bandwidth = Integer.parseInt(br.readLine());
+		} catch (NumberFormatException e) {
+		} catch (IOException e) {
+		}
+		try {
+			br.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		JSONObject json_bandwidth = new JSONObject();
+        json_bandwidth.put("command", "" + bandwidth);
+        if (pilotClientPipe != null) pilotOut.println(json_bandwidth.toString());
+        if (targetClientPipe != null) targetOut.println(json_bandwidth.toString());
+        pushLog("> RSRC: REQ BW " + bandwidth);
 	}
 	public static long getUnsignedInt(int x) {
 	    return x & 0x00000000ffffffffL;
