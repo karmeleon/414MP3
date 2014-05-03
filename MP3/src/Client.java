@@ -535,7 +535,8 @@ public class Client {
         	}
         };
         videoThread.start();
-        clientPipe.debugToDotFile(0, "appsink");
+        if (t == 0) pilotClientPipe.debugToDotFile(0, "appsink");
+        if (t == 1) targetClientPipe.debugToDotFile(0, "appsink");
 	}
 	
 	public static void updateResource() {
