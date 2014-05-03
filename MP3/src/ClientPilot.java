@@ -284,23 +284,14 @@ public class ClientPilot {
 		Element videoDepay = ElementFactory.make("rtpjpegdepay", "depay");
 		Element videoDecode = ElementFactory.make("jpegdec", "decode");
 		Element videoRate = ElementFactory.make("videorate", "rate1");
+		Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
 		Element videoSrc1Caps = ElementFactory.make("capsfilter", "src1caps");
 		videoSrc1Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1"));
-		Element videoColor = ElementFactory.make("ffmpegcolorspace", "color");
-		// src2
-		Element videoSrc2 = ElementFactory.make("videotestsrc", "vidsrc2");
-		Element videoSrc2Caps = ElementFactory.make("capsfilter", "src2caps");
-		videoSrc2Caps.setCaps(Caps.fromString("video/x-raw-yuv, framerate=30/1, width=200, height=150"));
 		Element videoColor2 = ElementFactory.make("ffmpegcolorspace", "color2");
 		
-		// mixer
-		Element videoMix = ElementFactory.make("videomixer", "vidmix");
-		Element mixedColor = ElementFactory.make("ffmpegcolorspace", "mixcolor");
 		
-		
-		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoSrc2, videoSrc2Caps, videoColor2, videoMix, mixedColor);
-		Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoMix, mixedColor); 
-		Element.linkMany(videoSrc2, videoSrc2Caps, videoColor2, videoMix);
+		videoBin.addMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoColor2);
+		Element.linkMany(videoDepay, videoDecode, videoRate, videoColor, videoSrc1Caps, videoColor2); 
 		
 		videoBin.addPad(new GhostPad("sink", videoDepay.getStaticPad("sink")));
 		clientPipe.add(videoBin);
@@ -386,7 +377,7 @@ public class ClientPilot {
 			} 
 		});
 		
-		Element.linkMany(mixedColor, vc.getElement());
+		Element.linkMany(videoColor2, vc.getElement());
         
         Thread videoThread = new Thread() {
         	public void run() {
