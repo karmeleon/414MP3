@@ -94,8 +94,6 @@ public class ClientLauncher extends JFrame{
 		scrollPane.setPreferredSize(new Dimension(200, 610));
 		debugPanel.add(scrollPane, BorderLayout.PAGE_START);
 		
-		scanResource();
-		
 		makeCtrlButton("Refresh");
 		debugPanel.add(buttons.get("Refresh"), BorderLayout.PAGE_END);
 		buttons.get("Refresh").setPreferredSize(new Dimension(100, 30));
@@ -273,31 +271,6 @@ public class ClientLauncher extends JFrame{
 		pushLog("> SYS: Starting Client...");
 		pushLog("> SYS: PATH " + currpath);
 		setVisible(true);
-	}
-	
-	private void scanResource() throws IOException {
-		BufferedReader br = null;
-		String rscPath = "resource.txt";
-		try {
-			br = new BufferedReader(new FileReader(rscPath));
-		} catch (FileNotFoundException e1) {
-			String somePath = ClientPilot.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-			rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
-			try {
-				br = new BufferedReader(new FileReader(rscPath));
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		try {
-			bandwidth = Integer.parseInt(br.readLine());
-		} catch (NumberFormatException e) {
-			pushLog("> RSRC: BAD VALUE");
-		} catch (IOException e) {
-			pushLog("> RSRC: BAD VALUE");
-		}
-		br.close();
 	}
 	
 	public static void startPilotMonitoring() {

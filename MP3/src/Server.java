@@ -118,7 +118,7 @@ public class Server {
 		} catch (IOException e) { e.printStackTrace(); }
 		
 		serverBW = bandwidth;
-        negotiateAll();
+		negotiateAll();
 	}
 	
 	public static void negotiateAll() {

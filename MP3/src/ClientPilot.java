@@ -41,6 +41,7 @@ public class ClientPilot {
 	static String resolution = "";
 	static String attribute = "";
 	static String request = "";
+	static String clientbw = "";
 	static Queue<FrameInfo> videoQ;
 	static Queue<FrameInfo> audioQ;
 	static Queue<CompareInfo> jointQ;
@@ -54,7 +55,6 @@ public class ClientPilot {
 		
 		String[] s = settings.split(" ");
 		attribute = s[0];                // Passive/Active
-		// clientbw = Integer.parseInt(s[1]); // Some amount
 		request = s[2];
 		
 		if (clientPipe == null) {
@@ -140,6 +140,8 @@ public class ClientPilot {
 
 	private static void connectAndPlay(VideoComponent vc, String settings, String addr) throws UnknownHostException, IOException {
 		// find this ip
+		updateResource();
+		
 		Socket skt = null;
 		if (addr.length() > 0) {
 			Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces();
@@ -174,7 +176,7 @@ public class ClientPilot {
         System.out.println("Client port: " + port);
         
         JSONObject json_settings = new JSONObject();
-        json_settings.put("settings", settings);
+        json_settings.put("settings", attribute +  " " + clientbw + " " + request);
         out.println(json_settings.toString());
         
         pushLog("> SYS: CNCT SUCCESS");
@@ -394,19 +396,20 @@ public class ClientPilot {
 	}
 	
 	public static void updateResource() {
+		int bandwidth = 0;
+		BufferedReader br = null;
+		String rscPath = "c_resource.txt";
+		
+		try {
+			br = new BufferedReader(new FileReader(rscPath));
+		} catch (FileNotFoundException e1) { e1.printStackTrace(); }
+		try {
+			bandwidth = Integer.parseInt(br.readLine());
+			br.close();
+		} catch (IOException e) { e.printStackTrace(); }
+        clientbw = "" + bandwidth;
+        
 		if (clientPipe != null) {
-			int bandwidth = 0;
-			BufferedReader br = null;
-			String rscPath = "c_resource.txt";
-			
-			try {
-				br = new BufferedReader(new FileReader(rscPath));
-			} catch (FileNotFoundException e1) { e1.printStackTrace(); }
-			try {
-				bandwidth = Integer.parseInt(br.readLine());
-				br.close();
-			} catch (IOException e) { e.printStackTrace(); }
-			
 			JSONObject json_bandwidth = new JSONObject();
 	        json_bandwidth.put("command", "" + bandwidth);
 	        out.println(json_bandwidth.toString());

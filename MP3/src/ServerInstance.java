@@ -36,6 +36,7 @@ public class ServerInstance extends Thread {
 	private Element videorate;
 	private boolean moveable;
 	private boolean v4l4jEnabled = true;
+	private String attribute; 
 	
 	ServerInstance(int startPort, String clientIP, String serverIP, Socket skt, int num, boolean moveable) {
 		serverLoc = serverIP;
@@ -168,7 +169,7 @@ public class ServerInstance extends Thread {
 
 	private Pipeline startStreaming(String settings) throws UnknownHostException, SocketException, InterruptedException {
 		String[] s = settings.split(" ");
-		final String attribute = s[0];     // Passive/Active
+		attribute = s[0];     // Passive/Active
 		clientBW = Integer.parseInt(s[1]); // Some amount
 		String[] args = {"--gst-plugin-path=/usr/local/lib/gstreamer-0.10"};
 		Gst.init("server", args);
@@ -348,30 +349,17 @@ public class ServerInstance extends Thread {
 	}
 	
 	public void negotiate() {
-		// kilobits per second
-		// 720 - 1000 kbps -> 30fps
 		// 480 - 750 kbps -> 30fps
-		// 360 - 500 kbps -> 30fps
 		// 240 -  250 kbps -> 30fps
 		int setfps = 0;
-		/*
 		double cap = 30;
-		int res = Integer.parseInt(resolution.substring(0, 3));
-		
-		if (res == 720)
-			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 1000.0)));
-		if (res == 480)
+		if (attribute.equalsIgnoreCase("active"))
 			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 750.0)));
-		if (res == 360)
-			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 500.0)));
-		if (res == 240)
+		else // "passive"
 			setfps = Math.min((int) cap, Math.min((int) (Server.serverBW * cap / 1000.0), (int) (clientBW * cap / 250.0)));
-			*/
+		
 		if (serverPipe != null) {
-			/**
-			 * HARD SET 30
-			 */
-			setfps = 30;
+			// setfps = 30;
 			videorate.set("force-fps", "" + setfps);
 			if (Server.textArea != null)
 				Server.pushLog("> (" + threadNum + ") SYS: NEGT FPS " + setfps);
