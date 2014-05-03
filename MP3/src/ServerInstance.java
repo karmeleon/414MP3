@@ -193,7 +193,10 @@ public class ServerInstance extends Thread {
 		Element videoColors = ElementFactory.make("ffmpegcolorspace", "vidcolors");
 		Element videoScale = ElementFactory.make("videoscale", "vidscale");
 		Element videoCaps = ElementFactory.make("capsfilter", "vidcaps");
-		videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,width=640,height=480"));
+		if(attribute.equalsIgnoreCase("active"))
+			videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,width=640,height=480"));
+		else
+			videoCaps.setCaps(Caps.fromString("video/x-raw-yuv,width=320,height=240"));
 		Element videoColors4 = ElementFactory.make("ffmpegcolorspace", "vidcolors4");
 		videoBin.addMany(videoSrc, videoColors, videoScale, videoCaps, videoColors4);
 		Element.linkMany(videoSrc, videoColors);
@@ -220,7 +223,10 @@ public class ServerInstance extends Thread {
 			Element videoColors5 = ElementFactory.make("ffmpegcolorspace", "vidcolors5");
 			Element videoOverlay = ElementFactory.make("rsvgoverlay", "vidoverlay");
 			videoOverlay.set("fit-to-frame", "true");
-			videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"overlay1.png\" /></svg>");
+			if(attribute.equalsIgnoreCase("active"))
+				videoOverlay.set("data", "<svg viewBox=\"0 0 640 480\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"overlay1.png\" /></svg>");
+			else
+				videoOverlay.set("data", "<svg viewBox=\"0 0 320 240\"><image x=\"0\" y=\"0\" width=\"100%\" height=\"100%\" xlink:href=\"overlay1.png\" /></svg>");
 			Element videoColors2 = ElementFactory.make("ffmpegcolorspace", "vidcolors2");
 			Element balance = ElementFactory.make("videobalance", "balance");
 			balance.set("saturation", "0.0");
