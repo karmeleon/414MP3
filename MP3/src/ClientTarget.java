@@ -51,6 +51,7 @@ public class ClientTarget {
 	static int yint = 128;
 	static int xpos = 0; // 8192
 	static int ypos = 0;
+	static Element mute = null;
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log, String addr) throws UnknownHostException, IOException {
 		textArea = log;
@@ -347,10 +348,11 @@ public class ClientTarget {
 			// AUDIO BIN
 			
 			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
+			mute = ElementFactory.make("volume", "vol");
 			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
 			
-			audioBin.addMany(audioDepay, audioSink);
-			Element.linkMany(audioDepay, audioSink);
+			audioBin.addMany(audioDepay, mute, audioSink);
+			Element.linkMany(audioDepay, mute, audioSink);
 			
 			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 			clientPipe.add(audioBin);

@@ -152,7 +152,8 @@ public class ClientLauncher extends JFrame{
 		pilotPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean selected = pilotPanel.muteBox.isSelected();
-				
+				if(ClientPilot.mute != null)
+					ClientPilot.mute.set("mute", selected ? "true" : "false");
 			}
 		});
 		
@@ -197,6 +198,8 @@ public class ClientLauncher extends JFrame{
 		targetPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean selected = pilotPanel.muteBox.isSelected();
+				if(ClientTarget.mute != null)
+					ClientTarget.mute.set("mute", selected ? "true" : "false");
 			}
 		});
 		
@@ -295,7 +298,6 @@ public class ClientLauncher extends JFrame{
 		pilotTimer = new Timer();
 		pilotTimer.scheduleAtFixedRate(new TimerTask() {
 			public void run() {
-				System.out.println("RAN");
 				double vsizesum = 0;
 				double asizesum = 0;
 				double vtimesum = 0;
@@ -346,7 +348,6 @@ public class ClientLauncher extends JFrame{
 				}
 			}
 		}, 0, 250);
-		
 	}
 		
 	public static void startTargetMonitoring() {
