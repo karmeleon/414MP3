@@ -25,6 +25,7 @@ public class ClientLauncher extends JFrame{
 	String rsrc;
 	Socket bandwidthSKT = null;
 	PrintWriter bandwidthWriter;
+	static JLayeredPane lp;
 	
 	Map<String, JButton> buttons;
 	boolean playing = false;
@@ -39,6 +40,8 @@ public class ClientLauncher extends JFrame{
 	
 	static Timer pilotTimer;
 	static Timer targetTimer;
+	
+	JComboBox<String> orderBox;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
@@ -76,7 +79,7 @@ public class ClientLauncher extends JFrame{
 		vc.setLayout(null);
 		vc.setBackground(Color.black);
 		
-		JLayeredPane lp = new JLayeredPane();
+		lp = new JLayeredPane();
 		lp.setPreferredSize(new Dimension(1000, 640));
 		lp.setSize(new Dimension(1000, 640));
 		lp.add(vc, new Integer(25));
@@ -89,10 +92,57 @@ public class ClientLauncher extends JFrame{
 		debugPanel.setLayout(new BorderLayout());
 		mainContainer.add(debugPanel, BorderLayout.LINE_END);
 		
+		String[] p = {"Target", "Pilot"};
+		orderBox = new JComboBox<String>(p);
+		orderBox.setPreferredSize(new Dimension(100,30));
+		debugPanel.add(orderBox, BorderLayout.PAGE_START);
+		orderBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (orderBox.getSelectedIndex() == 0) { // TARGET
+					lp.remove(vc);
+					lp.remove(pip);
+					videoPanel.remove(lp);
+					
+					lp = new JLayeredPane();
+					lp.setSize(new Dimension(1000, 640));
+					vc.setSize(new Dimension(1000, 640));
+					pip.setSize(new Dimension(300, 200));
+					lp.add(vc, new Integer(25));
+					lp.add(pip, new Integer(50));
+					
+					videoPanel.add(lp);
+					vc.revalidate(); vc.repaint();
+					pip.revalidate(); pip.repaint();
+					videoPanel.revalidate();
+					videoPanel.repaint();
+				}
+				else { // PILOT
+					lp.remove(vc);
+					lp.remove(pip);
+					videoPanel.remove(lp);
+					
+					lp = new JLayeredPane();
+					lp.setSize(new Dimension(1000, 640));
+					vc.setSize(new Dimension(300, 200));
+					pip.setSize(new Dimension(1000, 640));
+					lp.add(vc, new Integer(50));
+					lp.add(pip, new Integer(25));
+					
+					videoPanel.add(lp);
+					vc.revalidate(); vc.repaint();
+					pip.revalidate(); pip.repaint();
+					videoPanel.revalidate();
+					videoPanel.repaint();
+				}
+			}
+		});
+		
 		textArea = new JTextArea();
 		JScrollPane scrollPane = new JScrollPane(textArea);
-		scrollPane.setPreferredSize(new Dimension(200, 610));
-		debugPanel.add(scrollPane, BorderLayout.PAGE_START);
+		scrollPane.setPreferredSize(new Dimension(200, 580));
+		debugPanel.add(scrollPane, BorderLayout.CENTER);
+		
+		
 		
 		makeCtrlButton("Refresh");
 		debugPanel.add(buttons.get("Refresh"), BorderLayout.PAGE_END);
