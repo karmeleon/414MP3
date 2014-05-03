@@ -269,6 +269,7 @@ public class ClientPilot {
 				Buffer b = sink.getLastBuffer();
 				if (b != null) {
 					videoQ.offer(new FrameInfo(System.currentTimeMillis(), b.getSize()));
+					// System.out.println(System.currentTimeMillis());
 				}
 			} 
 		});

@@ -148,6 +148,11 @@ public class ClientLauncher extends JFrame{
 				}
 			}
 		});
+		pilotPanel.muteBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				boolean selected = pilotPanel.muteBox.isSelected();
+			}
+		});
 		
 		targetPanel = new ControlPanel("TARGET", 600, 160);
 		botPanel.add(targetPanel, BorderLayout.LINE_END);
@@ -183,6 +188,11 @@ public class ClientLauncher extends JFrame{
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+			}
+		});
+		targetPanel.muteBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				boolean selected = pilotPanel.muteBox.isSelected();
 			}
 		});
 		
