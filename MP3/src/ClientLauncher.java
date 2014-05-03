@@ -131,6 +131,7 @@ public class ClientLauncher extends JFrame{
 					}
 				};
 				clientThread.start();
+				startPilotMonitoring();
 			}
 		});
 		pilotPanel.stopButton.addActionListener(new ActionListener() {
@@ -151,6 +152,7 @@ public class ClientLauncher extends JFrame{
 		pilotPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean selected = pilotPanel.muteBox.isSelected();
+				
 			}
 		});
 		
@@ -167,12 +169,14 @@ public class ClientLauncher extends JFrame{
 								+ " " + bandwidth + " play" + " target";
 						try {
 							ClientTarget.handleRequest(vc, settings, textArea, targetPanel.netAddress.getText());
+							
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
 					}
 				};
 				clientThread.start();
+				startTargetMonitoring();
 			}
 		});
 		targetPanel.stopButton.addActionListener(new ActionListener() {
@@ -291,6 +295,7 @@ public class ClientLauncher extends JFrame{
 		pilotTimer = new Timer();
 		pilotTimer.scheduleAtFixedRate(new TimerTask() {
 			public void run() {
+				System.out.println("RAN");
 				double vsizesum = 0;
 				double asizesum = 0;
 				double vtimesum = 0;
@@ -341,6 +346,7 @@ public class ClientLauncher extends JFrame{
 				}
 			}
 		}, 0, 250);
+		
 	}
 		
 	public static void startTargetMonitoring() {
