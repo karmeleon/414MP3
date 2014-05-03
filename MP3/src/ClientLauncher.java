@@ -22,7 +22,6 @@ public class ClientLauncher extends JFrame{
 	int bandwidth = 0;
 	String logtext = "";
 	JTextArea textArea;
-	JPanel videoPanel;
 	String rsrc;
 	Socket bandwidthSKT = null;
 	PrintWriter bandwidthWriter;
@@ -30,7 +29,10 @@ public class ClientLauncher extends JFrame{
 	Map<String, JButton> buttons;
 	boolean playing = false;
 	boolean connected = false;
+	
+	JPanel videoPanel;
 	VideoComponent vc;
+	VideoComponent pip;
 	
 	ControlPanel pilotPanel;
 	ControlPanel targetPanel;
@@ -56,12 +58,23 @@ public class ClientLauncher extends JFrame{
 		
 		videoPanel = new JPanel();
 		videoPanel.setPreferredSize(new Dimension(1000, 640));
-		videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
-		videoPanel.setBackground(new Color(0,0,0));
-		mainContainer.add(videoPanel, BorderLayout.LINE_START);
+		videoPanel.setBackground(Color.yellow);
+		// videoPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 0,0));
+		videoPanel.setLayout(null);
+		// videoPanel.setBackground(new Color(0,0,0));
+		mainContainer.add(videoPanel);
+		
+		pip = new VideoComponent();
+		pip.setSize(new Dimension(300, 200));
+		pip.setLocation(new Point(0,0));
+		pip.setLayout(null);
+		pip.setBackground(Color.green);
+		videoPanel.add(pip);
 		
 		vc = new VideoComponent();
-		vc.setPreferredSize(new Dimension(1000, 640));
+		vc.setSize(new Dimension(1000, 640));
+		vc.setLocation(new Point(0,0));
+		vc.setLayout(null);
 		vc.setBackground(Color.black);
 		videoPanel.add(vc);
 		
@@ -106,7 +119,7 @@ public class ClientLauncher extends JFrame{
 						String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 								+ " " + bandwidth + " play" + " pilot";
 						try {
-							ClientPilot.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
+							ClientPilot.handleRequest(pip, settings, textArea, pilotPanel.netAddress.getText());
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -124,7 +137,7 @@ public class ClientLauncher extends JFrame{
 				String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
 						+ " " + bandwidth + " stop" + " pilot";
 				try {
-					ClientPilot.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
+					ClientPilot.handleRequest(pip, settings, textArea, pilotPanel.netAddress.getText());
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
