@@ -47,6 +47,7 @@ public class ClientPilot {
 	
 	static String clientLoc;
 	static String serverLoc = "localhost";
+	static Element mute = null;
 	
 	public static void handleRequest(VideoComponent vc, String settings, JTextArea log, String addr) throws UnknownHostException, IOException {
 		textArea = log;
@@ -303,10 +304,11 @@ public class ClientPilot {
 			// AUDIO BIN
 			
 			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
+			mute = ElementFactory.make("volume", "vol");
 			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
 			
-			audioBin.addMany(audioDepay, audioSink);
-			Element.linkMany(audioDepay, audioSink);
+			audioBin.addMany(audioDepay, mute, audioSink);
+			Element.linkMany(audioDepay, mute, audioSink);
 			
 			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 			clientPipe.add(audioBin);

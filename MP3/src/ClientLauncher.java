@@ -151,6 +151,8 @@ public class ClientLauncher extends JFrame{
 		pilotPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean selected = pilotPanel.muteBox.isSelected();
+				if(ClientPilot.mute != null)
+					ClientPilot.mute.set("mute", selected ? "true" : "false");
 			}
 		});
 		
@@ -193,6 +195,8 @@ public class ClientLauncher extends JFrame{
 		targetPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				boolean selected = pilotPanel.muteBox.isSelected();
+				if(ClientTarget.mute != null)
+					ClientTarget.mute.set("mute", selected ? "true" : "false");
 			}
 		});
 		
