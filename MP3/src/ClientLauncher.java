@@ -149,6 +149,13 @@ public class ClientLauncher extends JFrame{
 				}
 			}
 		});
+		pilotPanel.muteBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				boolean selected = pilotPanel.muteBox.isSelected();
+				if(ClientPilot.mute != null)
+					ClientPilot.mute.set("mute", selected ? "true" : "false");
+			}
+		});
 		
 		targetPanel = new ControlPanel("TARGET", 600, 160);
 		botPanel.add(targetPanel, BorderLayout.LINE_END);
@@ -188,23 +195,17 @@ public class ClientLauncher extends JFrame{
 				}
 			}
 		});
-		
 		targetPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				boolean selected = pilotPanel.muteBox.isSelected();
-				/*
-				if(ClientTarget.mute != null)
-					ClientTarget.mute.set("mute", selected ? "true" : "false");
-				*/
-			}
-		});
-		pilotPanel.muteBox.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				boolean selected = pilotPanel.muteBox.isSelected();
-				/*
-				if(ClientPilot.mute != null)
-					ClientPilot.mute.set("mute", selected ? "true" : "false");
-				*/
+				boolean selected = targetPanel.muteBox.isSelected();
+				if(ClientTarget.mute != null) {
+					if(selected) {
+						ClientTarget.mute.set("mute", "true");
+					}
+					else {
+						ClientTarget.mute.set("mute", "false");
+					}
+				}
 			}
 		});
 		

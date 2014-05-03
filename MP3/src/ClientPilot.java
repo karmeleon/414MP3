@@ -304,11 +304,13 @@ public class ClientPilot {
 			// AUDIO BIN
 			
 			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
-			//mute = ElementFactory.make("volume", "vol");
+			Element audioConvert = ElementFactory.make("audioconvert", "audconv");
+			mute = ElementFactory.make("volume", "vol");
+			mute.set("mute", "true");
 			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
 			
-			audioBin.addMany(audioDepay, audioSink);
-			Element.linkMany(audioDepay, audioSink);
+			audioBin.addMany(audioDepay, audioConvert, mute, audioSink);
+			Element.linkMany(audioDepay, audioConvert, mute, audioSink);
 			
 			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 			clientPipe.add(audioBin);
