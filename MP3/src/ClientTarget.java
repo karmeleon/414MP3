@@ -289,9 +289,6 @@ public class ClientTarget {
 					}
 				} 
 			});
-			clientPipe.addMany(taud, qaud, appAudioSink);
-			clientPipe.addMany(udpAudioSrc, audioRtcpIn, audioRtcpOut);
-			Element.linkMany(udpAudioSrc, taud, qaud, appAudioSink);
 			
 			audioRtcpIn = ElementFactory.make("udpsrc", "src4");
 			audioRtcpIn.set("uri", "udp://" + clientLoc +":" + (port + 3));
@@ -302,6 +299,9 @@ public class ClientTarget {
 			audioRtcpOut.set("sync", "false");
 			audioRtcpOut.set("async", "false");
 			
+			clientPipe.addMany(taud, qaud, appAudioSink);
+			clientPipe.addMany(udpAudioSrc, audioRtcpIn, audioRtcpOut);
+			Element.linkMany(udpAudioSrc, taud, qaud, appAudioSink);
 		}
 		
 		Element tvid = ElementFactory.make("tee", "tvid");
@@ -348,11 +348,11 @@ public class ClientTarget {
 			// AUDIO BIN
 			
 			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
-			mute = ElementFactory.make("volume", "vol");
+			//mute = ElementFactory.make("volume", "vol");
 			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
 			
-			audioBin.addMany(audioDepay, mute, audioSink);
-			Element.linkMany(audioDepay, mute, audioSink);
+			audioBin.addMany(audioDepay, audioSink);
+			Element.linkMany(audioDepay, audioSink);
 			
 			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 			clientPipe.add(audioBin);
