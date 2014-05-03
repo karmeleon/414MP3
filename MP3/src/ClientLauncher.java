@@ -197,9 +197,15 @@ public class ClientLauncher extends JFrame{
 		});
 		targetPanel.muteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				boolean selected = pilotPanel.muteBox.isSelected();
-				if(ClientTarget.mute != null)
-					ClientTarget.mute.set("mute", selected ? "true" : "false");
+				boolean selected = targetPanel.muteBox.isSelected();
+				if(ClientTarget.mute != null) {
+					if(selected) {
+						ClientTarget.mute.set("mute", "true");
+					}
+					else {
+						ClientTarget.mute.set("mute", "false");
+					}
+				}
 			}
 		});
 		
