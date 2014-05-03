@@ -263,7 +263,7 @@ public class ClientLauncher extends JFrame{
 		try {
 			br = new BufferedReader(new FileReader(rscPath));
 		} catch (FileNotFoundException e1) {
-			String somePath = Client.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
+			String somePath = ClientPilot.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
 			rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
 			try {
 				br = new BufferedReader(new FileReader(rscPath));
