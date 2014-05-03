@@ -347,10 +347,12 @@ public class ClientTarget {
 			// AUDIO BIN
 			
 			final Element audioDepay = ElementFactory.make("rtpL16depay", "auddepay");
+			Element audioMute = ElementFactory.make("volume", "vol");
+			audioMute.set("mute", "false");
 			final Element audioSink = ElementFactory.make("autoaudiosink", "audsink");
 			
-			audioBin.addMany(audioDepay, audioSink);
-			Element.linkMany(audioDepay, audioSink);
+			audioBin.addMany(audioDepay, audioMute, audioSink);
+			Element.linkMany(audioDepay, audioMute, audioSink);
 			
 			audioBin.addPad(new GhostPad("sink", audioDepay.getStaticPad("sink")));
 			clientPipe.add(audioBin);
