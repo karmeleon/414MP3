@@ -396,28 +396,14 @@ public class ClientPilot {
 			int bandwidth = 0;
 			BufferedReader br = null;
 			String rscPath = "c_resource.txt";
+			
 			try {
 				br = new BufferedReader(new FileReader(rscPath));
-			} catch (FileNotFoundException e1) {
-				String somePath = ClientLauncher.class.getProtectionDomain().getCodeSource().getLocation().getPath().toString();
-				rscPath = somePath.substring(0, somePath.indexOf("client")) + "c_resource.txt"; // find the local directory
-				try {
-					br = new BufferedReader(new FileReader(rscPath));
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+			} catch (FileNotFoundException e1) { e1.printStackTrace(); }
 			try {
 				bandwidth = Integer.parseInt(br.readLine());
-			} catch (NumberFormatException e) {
-			} catch (IOException e) {
-			}
-			try {
 				br.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			} catch (IOException e) { e.printStackTrace(); }
 			
 			JSONObject json_bandwidth = new JSONObject();
 	        json_bandwidth.put("command", "" + bandwidth);
