@@ -97,6 +97,40 @@ public class ClientLauncher extends JFrame{
 		pilotPanel = new ControlPanel("PILOT", 600, 160);
 		botPanel.add(pilotPanel, BorderLayout.LINE_START);
 		
+		pilotPanel.playButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				pushLog("> CTRL: PILOT CONNECTING");
+				pushLog("> SYS: REQUEST " + pilotPanel.typeCombo.getSelectedItem() + " " + bandwidth);
+				Thread clientThread = new Thread() {
+					public void run() {
+						String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+								+ " " + bandwidth + " play";
+						try {
+							ClientPilot.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				};
+				clientThread.start();
+			}
+		});
+		pilotPanel.stopButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				clearLog();
+				pushLog("> CTRL: PILOT CONNECTING");
+				pushLog("> SYS: REQUEST " + pilotPanel.typeCombo.getSelectedItem() + " " + bandwidth);
+				
+				String settings = "" + (pilotPanel.typeCombo.getSelectedIndex() == 0 ? "Passive" : "Active")
+						+ " " + bandwidth + " play";
+				try {
+					ClientPilot.handleRequest(vc, settings, textArea, pilotPanel.netAddress.getText());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+		
 		targetPanel = new ControlPanel("TARGET", 600, 160);
 		botPanel.add(targetPanel, BorderLayout.LINE_END);
 		
