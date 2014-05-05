@@ -15,7 +15,7 @@ public class ControlPanel extends JPanel {
 	String title;
 	public JLabel mon1; public JLabel mon2; public JLabel mon3; public JLabel mon4;
 	
-	public JComboBox<String> typeCombo;
+	public JComboBox typeCombo;
 	public JTextField netAddress;
 	public JButton playButton;
 	public JButton stopButton;
@@ -48,7 +48,7 @@ public class ControlPanel extends JPanel {
 		leftPanel.add(netAddress);
 		
 		String[] types = {"Active", "Passive"};
-		typeCombo = new JComboBox<String>(types);
+		typeCombo = new JComboBox(types);
 		leftPanel.add(typeCombo);
 		
 		playButton = new JButton("Connect");
