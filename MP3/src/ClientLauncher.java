@@ -41,7 +41,7 @@ public class ClientLauncher extends JFrame{
 	static Timer pilotTimer;
 	static Timer targetTimer;
 	
-	JComboBox<String> orderBox;
+	JComboBox orderBox;
 	
 	public ClientLauncher() throws IOException {
 		super("Client");
@@ -93,7 +93,7 @@ public class ClientLauncher extends JFrame{
 		mainContainer.add(debugPanel, BorderLayout.LINE_END);
 		
 		String[] p = {"Target", "Pilot"};
-		orderBox = new JComboBox<String>(p);
+		orderBox = new JComboBox(p);
 		orderBox.setPreferredSize(new Dimension(100,30));
 		debugPanel.add(orderBox, BorderLayout.PAGE_START);
 		orderBox.addActionListener(new ActionListener() {
