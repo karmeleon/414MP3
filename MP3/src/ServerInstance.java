@@ -95,6 +95,59 @@ public class ServerInstance extends Thread {
 	        		// this isn't an fps command, ignore it here
 	        	}
 	        	
+				if(command.equals("play")) {
+	        		if (seeking) {
+	        			seeking = false;
+	        			pb.seek(1.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
+	        		}
+	        		pb.setState(org.gstreamer.State.PLAYING);
+	        	} else if(command.equals("pause")) {
+	        		pb.setState(org.gstreamer.State.PAUSED);
+	        	} else if(command.equals("stop")) {
+	        		pb.setState(org.gstreamer.State.PAUSED);
+	        		pb.setState(org.gstreamer.State.NULL);
+	        	} else if(command.equals("ff")) {
+	        		seeking = true;
+	        		pb.seek(2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, pb.queryPosition(Format.TIME), SeekType.NONE, 0);
+	        	} else if(command.equals("rw")) {
+	        		seeking = true;
+	        		pb.seek(-2.0, Format.TIME, SeekFlags.ACCURATE | SeekFlags.FLUSH, SeekType.SET, 0, SeekType.SET, pb.queryPosition(Format.TIME));
+	        	} else if(command.equals("reset")) {
+	        		if(moveable && v4l4jEnabled) {
+	        			VideoDevice vid = new VideoDevice("/dev/video0");
+	        			try {
+	        				vid.getControlList().getControl("Pan/tilt Reset").setValue(3);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Pan/tilt Reset\"");
+	        			}
+		        		vid.releaseControlList();
+		        		vid.release();
+	        		}
+	        	} else if(command.equals("pan")) {
+	        		if(moveable && v4l4jEnabled) {
+	        			VideoDevice vd = new VideoDevice("/dev/video0");
+	        			try {
+	        				vd.getControlList().getControl("Pan (relative)").setValue(amount);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Pan (relative)\"");
+	        			}
+		        		vd.releaseControlList();
+		        		vd.release();
+	        		}
+	        	} else if(command.equals("tilt")) {
+	        		if(moveable && v4l4jEnabled) {
+	        			VideoDevice vde = new VideoDevice("/dev/video0");
+	        			try{
+			        		vde.getControlList().getControl("Tilt (relative)").setValue(amount);
+	        			} catch(ControlException e) {
+	        				Server.pushLog("> Camera does not seem to support \"Tilt (relative)\"");
+	        			}
+		        		vde.releaseControlList();
+		        		vde.release();
+	        		}
+	        	}
+
+	        	/*
 	        	switch(command) {
 	        	case "play":
 	        		if (seeking) {
@@ -157,6 +210,7 @@ public class ServerInstance extends Thread {
 	        	default:
 	        		break;
 	        	}
+	        	*/
 	        }
 	        
 	        in.close();
