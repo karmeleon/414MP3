@@ -17,8 +17,8 @@ public class ServerLauncher extends JFrame {
 	JButton startButton;
 	ServerLauncher serverGUI;
 	static JPanel ctrlPanel;
-	static JComboBox<String> netOption;
-	static JComboBox<String> camOption;
+	static JComboBox netOption;
+	static JComboBox camOption;
 	
 	public ServerLauncher() {
 		super("Server");
@@ -62,12 +62,12 @@ public class ServerLauncher extends JFrame {
 		ctrlPanel.add(startButton);
 		
 		String[] netSettings = {"LAN", "INET"};
-		netOption = new JComboBox<String>(netSettings);
+		netOption = new JComboBox(netSettings);
 		netOption.setPreferredSize(new Dimension(95,30));
 		ctrlPanel.add(netOption);
 		
 		String[] camSettings = {"PILOT", "TARGET"};
-		camOption = new JComboBox<String>(camSettings);
+		camOption = new JComboBox(camSettings);
 		camOption.setPreferredSize(new Dimension(95, 30));
 		ctrlPanel.add(camOption);
 		
